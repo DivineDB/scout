@@ -1,0 +1,63 @@
+{
+  "name": "Scout User",
+  "degree": "B.Tech Computer Science",
+  "graduation_year": 2025,
+  "location": {
+    "city": "Gwalior",
+    "state": "Madhya Pradesh",
+    "country": "India"
+  },
+  "contact": {
+    "email": "scout@example.com",
+    "phone": "+91 9876543210"
+  },
+  "interests": ["Full-Stack Development", "UI/UX Design", "Artificial Intelligence"],
+  "skills": {
+    "languages": ["TypeScript", "JavaScript", "Python", "HTML", "CSS"],
+    "frameworks": ["React", "Next.js", "Node.js", "Express", "Tailwind CSS"],
+    "ui_ux": ["Figma", "Framer", "Design Systems", "Prototyping"],
+    "ai_ml": ["Prompt Engineering", "OpenAI API", "LangChain", "Hugging Face"],
+    "tools": ["Git", "GitHub", "VS Code", "Postman", "Docker (basic)"],
+    "databases": ["PostgreSQL", "MongoDB", "SQLite", "Prisma ORM"]
+  },
+  "experience_details": [
+    {
+      "role": "Frontend Engineering Intern",
+      "company": "BuildFast Tech",
+      "duration": "May 2024 - Aug 2024",
+      "bullets": [
+        "Developed comprehensive React components using modern functional component patterns and React Hooks.",
+        "Integrated robust REST APIs with Next.js, significantly improving data load times by 20%.",
+        "Configured tailored Tailwind CSS utility classes to match the design system efficiently.",
+        "Refactored legacy JavaScript code to strong TypeScript, reducing standard run-time errors.",
+        "Implemented basic web accessibility standards across multiple forms."
+      ]
+    },
+    {
+      "role": "Full-Stack Developer (Personal Project)",
+      "company": "Open-Source LMS",
+      "duration": "Jan 2023 - Dec 2023",
+      "bullets": [
+        "Built responsive user interfaces utilizing responsive web design CSS principles.",
+        "Engineered scalable backend service integrations utilizing robust Node.js and Express server routing.",
+        "Optimized query performance in PostgreSQL to retrieve massive internal datasets efficiently.",
+        "Integrated secure user authentication using modern standards."
+      ]
+    }
+  ],
+  "preferences": {
+    "preferred_roles": ["Frontend Engineer", "Full-Stack Developer", "UI Engineer", "AI Product Engineer"],
+    "work_type": ["Remote", "Hybrid"],
+    "desired_pay_inr_lpa": {
+      "min": 8,
+      "ideal": 14
+    },
+    "preferred_company_size": ["Startup", "Mid-size"],
+    "willing_to_relocate": false
+  },
+  "social": {
+    "github": "https://github.com/scout-user",
+    "linkedin": "https://linkedin.com/in/scout-user",
+    "portfolio": "https://scout-user.dev"
+  }
+}

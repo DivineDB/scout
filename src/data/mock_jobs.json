@@ -1,0 +1,181 @@
+[
+  {
+    "id": "job_001",
+    "company": {
+      "name": "Supermove Labs",
+      "logo_url": "/logos/supermove.svg",
+      "website": "https://supermove.com",
+      "size": "Startup",
+      "industry": "SaaS / Logistics"
+    },
+    "role": "Frontend Engineer – Next.js & AI",
+    "experience_level": "Entry-level",
+    "job_type": "Full-time",
+    "pay": { "min": 10, "max": 16, "currency": "INR" },
+    "remote_status": "Remote",
+    "location": "Worldwide",
+    "tech_stack": ["Next.js", "TypeScript", "Tailwind CSS", "OpenAI API", "Prisma", "PostgreSQL"],
+    "match_score": 94,
+    "description": "Join our small but mighty frontend team to ship AI-augmented logistics dashboards. You'll own UI components end-to-end and collaborate with the AI team on intelligent search and recommendation features.",
+    "responsibilities": [
+      "Build and maintain Next.js 15 App Router pages and layouts",
+      "Integrate OpenAI API for smart suggestion features",
+      "Design pixel-perfect UI using Tailwind CSS & shadcn/ui",
+      "Write end-to-end tests with Playwright"
+    ],
+    "requirements": [
+      "Strong proficiency in React and TypeScript",
+      "Familiarity with REST/GraphQL APIs",
+      "Eye for UI/UX detail",
+      "B.Tech/B.E. in CS or equivalent (2023–2025 grad)"
+    ],
+    "apply_url": "https://jobs.supermove.com/frontend-ai",
+    "posted_at": "2026-03-28T09:00:00Z",
+    "apply_by": "2026-04-18T23:59:00Z",
+    "is_active": true,
+    "tags": ["AI", "Next.js", "Remote-first", "Startup", "Fresh Grad"]
+  },
+  {
+    "id": "job_002",
+    "company": {
+      "name": "Razorpay",
+      "logo_url": "/logos/razorpay.svg",
+      "website": "https://razorpay.com",
+      "size": "Large",
+      "industry": "FinTech / Payments"
+    },
+    "role": "UI Engineer – Design Systems",
+    "experience_level": "Entry-level",
+    "job_type": "Full-time",
+    "pay": { "min": 14, "max": 20, "currency": "INR" },
+    "remote_status": "Hybrid",
+    "location": "Bengaluru, India",
+    "tech_stack": ["React", "TypeScript", "CSS Modules", "Storybook", "Figma", "Chromatic"],
+    "match_score": 85,
+    "description": "Help us build and evolve Blade, Razorpay's open-source design system. You'll partner closely with design to ensure every component is accessible, beautiful, and developer-friendly.",
+    "responsibilities": [
+      "Develop reusable components for the Blade design system",
+      "Write Storybook stories and visual regression tests",
+      "Collaborate with Figma designs to achieve pixel-parity",
+      "Maintain accessibility (WCAG 2.1 AA) across all components"
+    ],
+    "requirements": [
+      "Proficiency in React with TypeScript",
+      "Understanding of CSS custom properties and theming",
+      "Familiarity with Figma",
+      "Knowledge of accessibility best practices"
+    ],
+    "apply_url": "https://razorpay.com/jobs/ui-engineer",
+    "posted_at": "2026-03-25T11:30:00Z",
+    "apply_by": "2026-04-15T23:59:00Z",
+    "is_active": true,
+    "tags": ["Design System", "UI/UX", "FinTech", "Hybrid", "Open-source"]
+  },
+  {
+    "id": "job_003",
+    "company": {
+      "name": "Pluto AI",
+      "logo_url": "/logos/pluto.svg",
+      "website": "https://pluto.ai",
+      "size": "Startup",
+      "industry": "AI / Productivity"
+    },
+    "role": "Full-Stack Developer – AI Products",
+    "experience_level": "Entry-level",
+    "job_type": "Full-time",
+    "pay": { "min": 8, "max": 13, "currency": "INR" },
+    "remote_status": "Remote",
+    "location": "India (Remote)",
+    "tech_stack": ["Next.js", "Python", "FastAPI", "LangChain", "Supabase", "Tailwind CSS"],
+    "match_score": 88,
+    "description": "Pluto AI is building the future of personal productivity with large language models. As our first full-stack hire, you'll build user-facing features and backend pipelines that power our LLM-driven assistant.",
+    "responsibilities": [
+      "Build full-stack features from design to deployment",
+      "Develop LangChain-based agent pipelines and prompt templates",
+      "Integrate Supabase for auth and real-time data",
+      "Ship fast with a lean team — from idea to production in days"
+    ],
+    "requirements": [
+      "Experience with Next.js and at least one backend framework",
+      "Curiosity about AI/LLMs and prompt engineering",
+      "Ability to work in a fast-paced startup environment",
+      "Strong communication skills"
+    ],
+    "apply_url": "https://pluto.ai/careers/fullstack",
+    "posted_at": "2026-04-01T08:00:00Z",
+    "is_active": true,
+    "tags": ["AI", "LangChain", "Full-Stack", "Remote-first", "Early-stage"]
+  },
+  {
+    "id": "job_004",
+    "company": {
+      "name": "Infosys BPM",
+      "logo_url": "/logos/infosys.svg",
+      "website": "https://www.infosysbpm.com",
+      "size": "Enterprise",
+      "industry": "IT Services / Consulting"
+    },
+    "role": "Associate Software Engineer – Java Backend",
+    "experience_level": "Entry-level",
+    "job_type": "Full-time",
+    "pay": { "min": 4, "max": 6, "currency": "INR" },
+    "remote_status": "On-site",
+    "location": "Pune, India",
+    "tech_stack": ["Java", "Spring Boot", "Hibernate", "Oracle DB", "Maven", "Jenkins"],
+    "match_score": 38,
+    "description": "Join Infosys BPM as an associate engineer and rotate through client-facing projects spanning banking, insurance, and retail domains using Java microservices architecture.",
+    "responsibilities": [
+      "Develop and maintain Java Spring Boot microservices",
+      "Write and optimize SQL queries on Oracle DB",
+      "Participate in agile ceremonies and sprint deliveries",
+      "Document technical specifications"
+    ],
+    "requirements": [
+      "B.Tech/BE in CS, IT, or related field (2024–2025 batch)",
+      "Knowledge of Core Java and OOP",
+      "Basic understanding of Spring framework",
+      "Willingness to relocate to Pune or assigned location"
+    ],
+    "apply_url": "https://career.infosys.com/jobdesc?jobid=12345",
+    "posted_at": "2026-03-20T06:00:00Z",
+    "apply_by": "2026-04-30T23:59:00Z",
+    "is_active": true,
+    "tags": ["Java", "Backend", "On-site", "Enterprise", "Relocation required"]
+  },
+  {
+    "id": "job_005",
+    "company": {
+      "name": "Codeant AI",
+      "logo_url": "/logos/codeant.svg",
+      "website": "https://codeant.ai",
+      "size": "Startup",
+      "industry": "Developer Tools / AI"
+    },
+    "role": "Product Engineer – Frontend & AI Integrations",
+    "experience_level": "Entry-level",
+    "job_type": "Full-time",
+    "pay": { "min": 12, "max": 18, "currency": "INR" },
+    "remote_status": "Remote",
+    "location": "Worldwide",
+    "tech_stack": ["React", "TypeScript", "Tailwind CSS", "OpenAI API", "Hugging Face", "Node.js"],
+    "match_score": 91,
+    "description": "Codeant is reimagining how developers review and improve code using AI. As a Product Engineer, you'll own the dashboard and IDE plugin frontend, and integrate cutting-edge AI models into delightful developer experiences.",
+    "responsibilities": [
+      "Build the Codeant web dashboard in React + TypeScript",
+      "Integrate Hugging Face and OpenAI APIs for code analysis features",
+      "Collaborate with designers to craft intuitive developer UX",
+      "Contribute to the VS Code extension frontend"
+    ],
+    "requirements": [
+      "Solid React and TypeScript skills",
+      "Interest in developer tools or AI-powered applications",
+      "Strong attention to design detail",
+      "Proactive and self-driven mindset"
+    ],
+    "apply_url": "https://codeant.ai/careers/product-engineer",
+    "posted_at": "2026-03-30T10:00:00Z",
+    "apply_by": "2026-04-20T23:59:00Z",
+    "is_active": true,
+    "tags": ["AI", "Developer Tools", "React", "Remote-first", "VS Code"]
+  }
+]
