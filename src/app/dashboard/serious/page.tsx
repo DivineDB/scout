@@ -73,7 +73,6 @@ export default function SeriousQueuePage() {
           <div className="flex flex-col gap-3">
             {jobs.map((job) => {
               const scoreStyle = getScoreStyle(job.match_score);
-              const hasInsight = !!(job.match_explanation || (job.missing_skills && job.missing_skills.length > 0));
 
               return (
                 <div key={job.id} className="relative group">
@@ -114,51 +113,47 @@ export default function SeriousQueuePage() {
                       </span>
 
                       {/* ⓘ Popover — stop propagation so Link doesn't fire */}
-                      {hasInsight && (
-                        <div onClick={(e) => e.preventDefault()}>
-                          <Popover>
-                            <PopoverTrigger
-                              className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1 rounded relative z-20"
-                            >
-                              <Info size={15} />
-                            </PopoverTrigger>
-                            <PopoverContent
-                              className="w-80 p-4 text-sm z-50 bg-white dark:bg-[#121212] border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl relative overflow-visible"
-                            >
-                              <div className="space-y-3">
-                                {job.match_explanation && (
-                                  <div>
-                                    <h4 className="font-bold text-[11px] uppercase tracking-widest text-slate-400 mb-1.5">
-                                      Why this job?
-                                    </h4>
-                                    <p className="text-slate-700 dark:text-slate-300 text-[12.5px] leading-relaxed font-medium">
-                                      {job.match_explanation}
-                                    </p>
-                                  </div>
-                                )}
-                                {job.missing_skills && job.missing_skills.length > 0 && (
-                                  <div>
-                                    <h4 className="font-bold text-[11px] uppercase tracking-widest text-slate-400 mb-1.5">
-                                      Skill Gaps
-                                    </h4>
-                                    <div className="flex flex-wrap gap-1">
-                                      {job.missing_skills.map((skill) => (
-                                        <Badge
-                                          key={skill}
-                                          variant="destructive"
-                                          className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 border border-red-200 dark:border-red-900/30 px-1.5 py-0.5 text-[10px] font-semibold"
-                                        >
-                                          {skill}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
+                      <div onClick={(e) => e.preventDefault()}>
+                        <Popover>
+                          <PopoverTrigger
+                            className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1 rounded relative z-20"
+                          >
+                            <Info size={15} />
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="w-80 p-4 text-sm z-50 bg-white dark:bg-[#121212] border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl relative overflow-visible"
+                          >
+                            <div className="space-y-3">
+                              <div>
+                                <h4 className="font-bold text-[11px] uppercase tracking-widest text-slate-400 mb-1.5">
+                                  Why this job?
+                                </h4>
+                                <p className="text-slate-700 dark:text-slate-300 text-[12.5px] leading-relaxed font-medium">
+                                  {job.match_explanation || "Analyzing..."}
+                                </p>
                               </div>
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                      )}
+                              {job.missing_skills && job.missing_skills.length > 0 && (
+                                <div>
+                                  <h4 className="font-bold text-[11px] uppercase tracking-widest text-slate-400 mb-1.5">
+                                    Skill Gaps
+                                  </h4>
+                                  <div className="flex flex-wrap gap-1">
+                                    {job.missing_skills.map((skill) => (
+                                      <Badge
+                                        key={skill}
+                                        variant="destructive"
+                                        className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 border border-red-200 dark:border-red-900/30 px-1.5 py-0.5 text-[10px] font-semibold"
+                                      >
+                                        {skill}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
                     </div>
                   </Link>
                 </div>

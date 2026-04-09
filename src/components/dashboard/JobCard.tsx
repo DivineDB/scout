@@ -157,45 +157,43 @@ export function JobCard({ job, onClick }: { job: JobPost; onClick: (job: JobPost
         </div>
         <div className="shrink-0 pt-0.5 flex items-center gap-2">
           <ScoreBadge score={job.match_score} />
-          {(job.match_explanation || (job.missing_skills && job.missing_skills.length > 0)) && (
-            <Popover>
-              <PopoverTrigger
-                className="text-muted-foreground hover:text-primary transition-colors flex items-center justify-center p-1"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Info size={16} />
-              </PopoverTrigger>
-              <PopoverContent
-                className="w-80 p-4 text-sm z-50 bg-white border shadow-lg rounded-md"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="space-y-4">
-                  {job.match_explanation && (
-                    <div>
-                      <h4 className="font-semibold mb-1 text-slate-900">Why this match?</h4>
-                      <p className="text-slate-600 leading-snug">{job.match_explanation}</p>
-                    </div>
-                  )}
-                  {job.missing_skills && job.missing_skills.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold mb-1 text-slate-900">Missing Skills</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {job.missing_skills.map((skill) => (
-                          <Badge
-                            key={skill}
-                            variant="destructive"
-                            className="bg-red-100 text-red-800 hover:bg-red-200 border-none px-1.5 py-0.5 text-[10px]"
-                          >
-                            {skill}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+          <Popover>
+            <PopoverTrigger
+              className="text-muted-foreground hover:text-primary transition-colors flex items-center justify-center p-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Info size={16} />
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-80 p-4 text-sm z-50 bg-white border shadow-lg rounded-md"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold mb-1 text-slate-900">Why this match?</h4>
+                  <p className="text-slate-600 leading-snug">
+                    {job.match_explanation || "Analyzing..."}
+                  </p>
                 </div>
-              </PopoverContent>
-            </Popover>
-          )}
+                {job.missing_skills && job.missing_skills.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-1 text-slate-900">Missing Skills</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {job.missing_skills.map((skill) => (
+                        <Badge
+                          key={skill}
+                          variant="destructive"
+                          className="bg-red-100 text-red-800 hover:bg-red-200 border-none px-1.5 py-0.5 text-[10px]"
+                        >
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 

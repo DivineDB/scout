@@ -93,11 +93,7 @@ export function Sidebar() {
         borderRight: "1px solid var(--border-default)",
       }}
     >
-      <div className="mb-6">
-        <Wordmark />
-      </div>
-
-      <nav className="flex flex-1 flex-col items-center gap-2">
+      <nav className="flex flex-1 flex-col items-center gap-2 mt-4">
         {mounted && NAV.map((item) => (
           <NavItem
             key={item.href}

@@ -3,8 +3,8 @@
 Designed to cut through the noise, distil signal, and target high-pay remote roles seamlessly.
 
 ## Current Progress & Status
-- **Status**: Deployed on Vercel with Supabase RLS policies active.
-- **Features Implemented**: Obsidian Dark Mode, Serious Queue, Split-Pane Workspace, and BAML-style extraction.
+- **Status**: Deployed on Vercel with Supabase RLS policies active. System Polished.
+- **Features Implemented**: Obsidian Dark Mode layout bugfixes, relaxed 2-3 sentence AI hook prompt rules, unconditionally visible ⓘ match explanation popovers, Sidebar UI cleanup, Serious Queue, Split-Pane Workspace, and BAML-style extraction.
 
 ## Architecture
 - **Tech Stack**: Next.js 15, Supabase, Gemini 1.5 Flash, Firecrawl v4, and @react-pdf/renderer.
