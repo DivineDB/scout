@@ -172,7 +172,7 @@ export function JobCard({ job, onClick }: { job: JobPost; onClick: (job: JobPost
                 <div>
                   <h4 className="font-semibold mb-1 text-slate-900">Why this match?</h4>
                   <p className="text-slate-600 leading-snug">
-                    {job.match_explanation || "Analyzing..."}
+                    {job.match_explanation || "Alignment based on Tech Stack & Preferences."}
                   </p>
                 </div>
                 {job.missing_skills && job.missing_skills.length > 0 && (

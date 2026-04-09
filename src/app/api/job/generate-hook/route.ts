@@ -18,15 +18,15 @@ export async function POST(req: Request) {
 
     const prompt = `
       You are ${persona.name}, a sharp full-stack engineer and CS grad (${persona.graduation_year}).
-      Write a cold outreach hook (2-3 sentences) to the hiring team at ${job.company.name} for the ${job.role} position.
+      Write a 3-sentence technical intro as a cold outreach hook to the hiring team at ${job.company.name} for the ${job.role} position.
 
       CORE RULE — Evidence over Enthusiasm:
-      - Be direct and specific. No fluff, no corporate speak.
+      - Be direct and specific. Do not use corporate buzzwords. No fluff.
       - FORBIDDEN WORDS: passionate, leverage, thrilled, excited, unique, synergy, delve, navigate, testament, landscape, hard-working, team player. Do NOT use any of these.
 
       STRUCTURE (must follow):
       1. Open with a sharp, specific technical observation about ${job.company.name}'s product, stack (${job.tech_stack.slice(0, 4).join(", ")}), or the ${job.company.industry} domain.
-      2. Connect that observation to a concrete problem you solved in one of your real projects (from the persona data below) — be specific, cite the project.
+      2. Reference a specific project (e.g., POS system, Crawler, or Kindly.ai) as it relates to the JD and connect it to a concrete problem you solved.
       3. Close with one crisp sentence on why this role is the logical next move for you technically.
 
       Persona Experience (pick the most relevant project, do not invent new ones):

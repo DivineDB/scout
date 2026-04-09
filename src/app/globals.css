@@ -2,6 +2,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+@custom-variant dark (&:is(.dark *));
+
 /* ───────────────────────────────────────────────────────────────────────────
    SCOUT — "Calm Tech" Light Palette
    ─────────────────────────────────────────────────────────────────────────── */
@@ -118,8 +120,8 @@
   }
 
   body {
-    background-color: var(--surface-0);
-    color: var(--text-1);
+    background-color: var(--background);
+    color: var(--foreground);
     min-height: 100dvh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
