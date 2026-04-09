@@ -9,6 +9,7 @@ export interface Persona {
   name: string;
   degree: string;
   graduation_year: number;
+  summary: string;
   location: {
     city: string;
     state: string;

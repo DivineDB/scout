@@ -74,25 +74,37 @@
   --score-low:       #EF4444; /* Red-500 */
 }
 
-/* Hard reset for dark mode to prevent flash if user system is dark, since the theme is strictly FBFBFB */
+/* Obsidian Dark Mode palette */
 .dark {
-  /* Keep it synced to light or override if they want a dark option later, but for now force FBFBFB */
-  --background:           #FBFBFB;
-  --foreground:           #0F172A;
-  --card:                 #FFFFFF;
-  --card-foreground:      #0F172A;
-  --popover:              #FFFFFF;
-  --popover-foreground:   #0F172A;
-  --primary:              #00FFC2;
-  --primary-foreground:   #0F172A;
-  --secondary:            #F1F5F9;
-  --secondary-foreground: #0F172A;
-  --muted:                #F1F5F9;
-  --muted-foreground:     #64748B;
-  --accent:               #F1F5F9;
-  --accent-foreground:    #0F172A;
-  --border:               #E2E8F0;
-  --input:                #E2E8F0;
+  --background:           #0A0A0A;
+  --foreground:           #F8FAFC; /* Slate-50 */
+  --card:                 #121212;
+  --card-foreground:      #F8FAFC;
+  --popover:              #121212;
+  --popover-foreground:   #F8FAFC;
+  --primary:              #00FFC2; /* Carbon Mint */
+  --primary-foreground:   #0A0A0A; /* Obsidian */
+  --secondary:            #1E293B; /* Slate-800 */
+  --secondary-foreground: #F8FAFC;
+  --muted:                #1E293B;
+  --muted-foreground:     #94A3B8; /* Slate-400 */
+  --accent:               #1E293B;
+  --accent-foreground:    #F8FAFC;
+  --border:               #1E293B;
+  --input:                #1E293B;
+  
+  --surface-0:            #0A0A0A;
+  --surface-1:            #121212;
+  --surface-2:            #1E1E1E;
+  --surface-3:            #262626;
+
+  --border-subtle:        #1E293B;
+  --border-default:       #334155;
+  --border-strong:        #475569;
+
+  --text-1:               #F8FAFC;
+  --text-2:               #CBD5E1;
+  --text-3:               #94A3B8;
 }
 
 @layer base {
@@ -134,6 +146,13 @@
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--border-default);
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05); /* very soft shadow for depth on #FBFBFB */
+  }
+
+  .glass-dark {
+    background: rgba(10, 10, 10, 0.72);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid var(--border-default);
   }
 
   .border-subtle { border-color: var(--border-subtle); }

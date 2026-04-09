@@ -1,26 +1,31 @@
 # Project Goal
-**NomadScout AI** - A high-speed job hunter for Divyansh (2025 CS Grad).
+**Scout** - A high-speed job hunter for Divyansh (2025 CS Grad).
 Designed to cut through the noise, distil signal, and target high-pay remote roles seamlessly.
 
-## Tech Stack
-- Next.js 15 (App Router)
-- TypeScript
-- Tailwind CSS (v4)
-- shadcn/ui components
-- Supabase (Backend/Auth)
+## Current Progress & Status
+- **Status**: Deployed on Vercel with Supabase RLS policies active.
+- **Features Implemented**: Obsidian Dark Mode, Serious Queue, Split-Pane Workspace, and BAML-style extraction.
 
-## Design System (Strict)
-**Theme**: 'Calm Tech'
-- **Palette**: Neutrals (Slate/Zinc) on #FBFBFB background. NO PURPLE.
-- **Accents**: Carbon Mint (`#00FFC2`) heavily used for match scores, badges, and primary actions.
-- **Borders**: Crisp 1px slate borders across all dynamic surfaces and glass-panels.
+## Architecture
+- **Tech Stack**: Next.js 15, Supabase, Gemini 1.5 Flash, Firecrawl v4, and @react-pdf/renderer.
+- **Design System**: 'Calm Tech'
+  - **Palette**: Neutrals (Slate/Zinc) on Obsidian Dark Mode (`#0A0A0A`) / Light Mode (`#FBFBFB`). NO PURPLE.
+  - **Accents**: Carbon Mint (`#00FFC2`) heavily used for match scores, badges, and primary actions.
+  - **Borders**: Crisp 1px slate borders across all dynamic surfaces and glass-panels.
 
 ## Persona Ref
-All AI analysis, match scoring, and generation logic must strictly align with `src/data/me.json`.
+All "Match" and "Morph" logic must strictly anchor to `src/data/me.json`.
 Current Snapshot:
+- Name: Divyansh
 - B.Tech CS 2025 (Gwalior, India)
-- Full-stack, UI/UX, AI Prompt Engineering
+- Full-stack context combined with a filmmaker/photography eye for UX.
 - Prefers Remote/Hybrid at ₹8-14 LPA.
+
+## Naming Conventions
+- **Serious Mode**: Hard-enforced terminology for the high-priority job pipeline. (Do not use legacy term "Sniper Mode").
+
+## Automation Roadmap
+- **Next High-Priority Objective**: Mission 7: The Ghost Scouter.
 
 ## Commands
 Run `npm run check-context` to verify agentic memory retention.

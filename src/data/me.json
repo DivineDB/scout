@@ -1,17 +1,18 @@
 {
-  "name": "Scout User",
+  "name": "Divyansh",
   "degree": "B.Tech Computer Science",
   "graduation_year": 2025,
+  "summary": "A 2025 CS Grad with a filmmaker's eye for UX. Building full-stack systems where high-fidelity design meets agentic automation.",
   "location": {
     "city": "Gwalior",
     "state": "Madhya Pradesh",
     "country": "India"
   },
   "contact": {
-    "email": "scout@example.com",
-    "phone": "+91 9876543210"
+    "email": "divyansh@example.com",
+    "phone": "+91 9999999999"
   },
-  "interests": ["Full-Stack Development", "UI/UX Design", "Artificial Intelligence"],
+  "interests": ["Full-Stack Development", "UI/UX Design", "Artificial Intelligence", "Filmmaking", "Photography"],
   "skills": {
     "languages": ["TypeScript", "JavaScript", "Python", "HTML", "CSS"],
     "frameworks": ["React", "Next.js", "Node.js", "Express", "Tailwind CSS"],

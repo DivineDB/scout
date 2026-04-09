@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
+import { formatSalary } from "@/lib/format-salary";
 
 // ─── Score badge helpers (mirrors JobCard.tsx) ────────────────────────────────
 function getScoreStyle(score: number): React.CSSProperties {
@@ -96,8 +97,8 @@ export default function SeriousQueuePage() {
                     {/* Right: pay + remote + score + ⓘ */}
                     <div className="flex items-center gap-4 shrink-0">
                       <div className="flex flex-col items-end">
-                        <span className="text-xs font-bold text-slate-900">
-                          ₹{job.pay?.min}L – ₹{job.pay?.max}L
+                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                          {formatSalary(job.pay?.min)} – {formatSalary(job.pay?.max)}
                         </span>
                         <span className="text-[10px] font-semibold text-slate-500">
                           {job.remote_status}
@@ -114,49 +115,49 @@ export default function SeriousQueuePage() {
 
                       {/* ⓘ Popover — stop propagation so Link doesn't fire */}
                       {hasInsight && (
-                        <Popover>
-                          <PopoverTrigger
-                            className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded"
-                            onClick={(e) => e.preventDefault()}
-                          >
-                            <Info size={15} />
-                          </PopoverTrigger>
-                          <PopoverContent
-                            className="w-80 p-4 text-sm z-50 bg-white border border-slate-200 shadow-xl rounded-xl"
-                            onClick={(e) => e.preventDefault()}
-                          >
-                            <div className="space-y-3">
-                              {job.match_explanation && (
-                                <div>
-                                  <h4 className="font-bold text-[11px] uppercase tracking-widest text-slate-400 mb-1.5">
-                                    Why this job?
-                                  </h4>
-                                  <p className="text-slate-700 text-[12.5px] leading-relaxed font-medium">
-                                    {job.match_explanation}
-                                  </p>
-                                </div>
-                              )}
-                              {job.missing_skills && job.missing_skills.length > 0 && (
-                                <div>
-                                  <h4 className="font-bold text-[11px] uppercase tracking-widest text-slate-400 mb-1.5">
-                                    Skill Gaps
-                                  </h4>
-                                  <div className="flex flex-wrap gap-1">
-                                    {job.missing_skills.map((skill) => (
-                                      <Badge
-                                        key={skill}
-                                        variant="destructive"
-                                        className="bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 px-1.5 py-0.5 text-[10px] font-semibold"
-                                      >
-                                        {skill}
-                                      </Badge>
-                                    ))}
+                        <div onClick={(e) => e.preventDefault()}>
+                          <Popover>
+                            <PopoverTrigger
+                              className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1 rounded relative z-20"
+                            >
+                              <Info size={15} />
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-80 p-4 text-sm z-50 bg-white dark:bg-[#121212] border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl relative overflow-visible"
+                            >
+                              <div className="space-y-3">
+                                {job.match_explanation && (
+                                  <div>
+                                    <h4 className="font-bold text-[11px] uppercase tracking-widest text-slate-400 mb-1.5">
+                                      Why this job?
+                                    </h4>
+                                    <p className="text-slate-700 dark:text-slate-300 text-[12.5px] leading-relaxed font-medium">
+                                      {job.match_explanation}
+                                    </p>
                                   </div>
-                                </div>
-                              )}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
+                                )}
+                                {job.missing_skills && job.missing_skills.length > 0 && (
+                                  <div>
+                                    <h4 className="font-bold text-[11px] uppercase tracking-widest text-slate-400 mb-1.5">
+                                      Skill Gaps
+                                    </h4>
+                                    <div className="flex flex-wrap gap-1">
+                                      {job.missing_skills.map((skill) => (
+                                        <Badge
+                                          key={skill}
+                                          variant="destructive"
+                                          className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 border border-red-200 dark:border-red-900/30 px-1.5 py-0.5 text-[10px] font-semibold"
+                                        >
+                                          {skill}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
                       )}
                     </div>
                   </Link>

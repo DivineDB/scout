@@ -11,6 +11,7 @@ import { ClientOnly } from "@/components/ClientOnly";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Loader2, FileDown } from "lucide-react";
+import { formatSalary } from "@/lib/format-salary";
 import { supabase } from "@/lib/supabase";
 import meData from "@/data/me.json";
 
@@ -24,17 +25,7 @@ const PDFDownloadLink = dynamic(
   { ssr: false }
 );
 
-// ─── Quick Hook generator ──────────────────────────────────────────────────────
-function buildQuickHook(persona: Persona, job: JobPost): string {
-  const topSkills = job.tech_stack.slice(0, 3).join(", ");
-  return (
-    `Hi ${job.company.name} team 👋\n\n` +
-    `I'm a 2025 B.Tech CS grad with hands-on experience in ${topSkills} and a ${job.match_score}% alignment to your ${job.role} role.\n\n` +
-    `I've built full-stack products end-to-end — from UI systems to backend integrations — and I thrive in ${job.remote_status.toLowerCase()} environments. ` +
-    `Your ${job.company.industry} focus is exactly the space I want to grow in.\n\n` +
-    `Would love to connect and show you what I can bring to the team.`
-  );
-}
+// Removed buildQuickHook to use API route
 
 // ─── PDF Skeleton loader for the right pane ──────────────────────────────────
 function PDFSkeleton() {
@@ -58,10 +49,11 @@ export default function SeriousModePage({
   const [job, setJob] = useState<JobPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hookText, setHookText] = useState("");
+  const [morphedProfile, setMorphedProfile] = useState<any>(null);
   const persona = meData as Persona;
 
   useEffect(() => {
-    async function fetchJob() {
+    async function fetchJobAndAssets() {
       try {
         setIsLoading(true);
         const { data, error } = await supabase
@@ -73,14 +65,30 @@ export default function SeriousModePage({
         if (error) throw error;
         const fetched = data as JobPost;
         setJob(fetched);
-        setHookText(buildQuickHook(persona, fetched));
+
+        // Fetch Hook
+        fetch("/api/job/generate-hook", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ job: fetched, persona }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.hook) setHookText(data.hook);
+          })
+          .catch((err) => console.error("Error fetching hook:", err));
+
+        // Morph Resume
+        const morphed = await morphResume(persona, fetched);
+        setMorphedProfile(morphed);
+
       } catch (err) {
         console.error("Error fetching job:", err);
       } finally {
         setIsLoading(false);
       }
     }
-    fetchJob();
+    fetchJobAndAssets();
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Loading state ──────────────────────────────────────────────────────────
@@ -109,7 +117,7 @@ export default function SeriousModePage({
     );
 
   // ── Morph the resume bullets based on this job's tech stack ───────────────
-  const morphedProfile = morphResume(persona, job);
+  // Handled in state via morphedProfile
 
   // ── Match score colour ─────────────────────────────────────────────────────
   const scoreColor =
@@ -158,7 +166,7 @@ export default function SeriousModePage({
             <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-slate-600 mb-1">
               <span className="px-2 py-0.5 bg-slate-100 rounded-sm">{job.remote_status}</span>
               <span className="px-2 py-0.5 bg-slate-100 rounded-sm">
-                ₹{job.pay.min}–{job.pay.max}L
+                {formatSalary(job.pay.min)} – {formatSalary(job.pay.max)}
               </span>
               <span className="px-2 py-0.5 bg-slate-100 rounded-sm">{job.experience_level}</span>
               <span
@@ -265,29 +273,39 @@ export default function SeriousModePage({
               </div>
             }
           >
-            <PDFDownloadLink
-              document={<ResumeTemplate profile={morphedProfile} />}
-              fileName={`Resume_${persona.name.replace(/\s+/g, "_")}_${job.company.name.replace(/\s+/g, "_")}.pdf`}
-            >
-              {({ loading }) => (
-                <div
-                  className="w-full py-3.5 rounded-md text-[13px] font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md transition-transform hover:scale-[0.99] font-sans"
-                  style={{
-                    background: "#0F172A",
-                    color: "#00FFC2",
-                    border: "1px solid #00FFC2",
-                    letterSpacing: "0.5px",
-                    opacity: loading ? 0.7 : 1,
-                  }}
-                >
-                  {loading ? (
-                    <><Loader2 className="h-4 w-4 animate-spin" /> BUILDING PDF…</>
-                  ) : (
-                    <><FileDown className="h-4 w-4" /> DOWNLOAD TAILORED PDF</>
-                  )}
-                </div>
-              )}
-            </PDFDownloadLink>
+            {morphedProfile ? (
+              <PDFDownloadLink
+                document={<ResumeTemplate profile={morphedProfile} />}
+                fileName={`Resume_${persona.name.replace(/\s+/g, "_")}_${job.company.name.replace(/\s+/g, "_")}.pdf`}
+              >
+                {({ loading }) => (
+                  <div
+                    className="w-full py-3.5 rounded-md text-[13px] font-bold flex items-center justify-center gap-2 cursor-pointer shadow-md transition-transform hover:scale-[0.99] font-sans"
+                    style={{
+                      background: "#0F172A",
+                      color: "#00FFC2",
+                      border: "1px solid #00FFC2",
+                      letterSpacing: "0.5px",
+                      opacity: loading ? 0.7 : 1,
+                    }}
+                  >
+                    {loading ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> BUILDING PDF…</>
+                    ) : (
+                      <><FileDown className="h-4 w-4" /> DOWNLOAD TAILORED PDF</>
+                    )}
+                  </div>
+                )}
+              </PDFDownloadLink>
+            ) : (
+              <div
+                className="w-full py-3.5 rounded-md text-[13px] font-bold flex items-center justify-center gap-2 opacity-50 cursor-not-allowed"
+                style={{ background: "#0F172A", color: "#00FFC2", border: "1px solid #00FFC2" }}
+              >
+                <Loader2 className="h-4 w-4 animate-spin" />
+                PREPARING PDF…
+              </div>
+            )}
           </ClientOnly>
         </div>
       </div>
@@ -301,18 +319,28 @@ export default function SeriousModePage({
             Live ATS Preview
           </h2>
           <p className="text-[12px] font-medium text-slate-500">
-            Bullets re-ordered to surface:{" "}
-            <span className="font-bold text-[#047857]">
-              {morphedProfile.top_keywords.join(", ")}
-            </span>
+            {morphedProfile ? (
+              <>
+                Bullets re-ordered to surface:{" "}
+                <span className="font-bold text-[#047857]">
+                  {morphedProfile.top_keywords.join(", ")}
+                </span>
+              </>
+            ) : (
+              "Molding resume to Technical Theme..."
+            )}
           </p>
         </div>
 
         <div className="flex-1 rounded-xl border border-slate-300 shadow-lg overflow-hidden bg-white">
           <ClientOnly fallback={<PDFSkeleton />}>
-            <PDFViewer style={{ width: "100%", height: "100%", border: "none" }}>
-              <ResumeTemplate profile={morphedProfile} />
-            </PDFViewer>
+            {morphedProfile ? (
+              <PDFViewer style={{ width: "100%", height: "100%", border: "none" }}>
+                <ResumeTemplate profile={morphedProfile} />
+              </PDFViewer>
+            ) : (
+              <PDFSkeleton />
+            )}
           </ClientOnly>
         </div>
       </div>

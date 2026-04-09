@@ -40,6 +40,12 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     color: '#555555',
   },
+  summaryText: {
+    fontSize: 10,
+    lineHeight: 1.4,
+    color: '#333333',
+    marginTop: 10,
+  },
   sectionTitle: {
     fontSize: 13,
     marginTop: 15,
@@ -110,6 +116,9 @@ export const ResumeTemplate = ({ profile }: { profile: MorphedProfile }) => (
         </Text>
         <Text style={styles.jobContext}>
           Tailored for: {profile.target_job_title}
+        </Text>
+        <Text style={styles.summaryText}>
+          {profile.persona.summary}
         </Text>
       </View>
 
