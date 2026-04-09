@@ -18,11 +18,15 @@ export async function POST(req: Request) {
       .update({ ...updates, updated_at: new Date().toISOString() })
       .eq("id", jobId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("[Job Update] Supabase Error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    if (!data) {
+      return NextResponse.json({ error: "Job does not exist in the database. (Mock jobs cannot be promoted)." }, { status: 404 });
     }
 
     return NextResponse.json({ success: true, job: data });

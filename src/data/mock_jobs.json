@@ -1,6 +1,6 @@
 [
   {
-    "id": "job_001",
+    "id": "00000000-0000-0000-0000-000000000001",
     "company": {
       "name": "Supermove Labs",
       "logo_url": "/logos/supermove.svg",
@@ -36,7 +36,7 @@
     "tags": ["AI", "Next.js", "Remote-first", "Startup", "Fresh Grad"]
   },
   {
-    "id": "job_002",
+    "id": "00000000-0000-0000-0000-000000000002",
     "company": {
       "name": "Razorpay",
       "logo_url": "/logos/razorpay.svg",
@@ -72,7 +72,7 @@
     "tags": ["Design System", "UI/UX", "FinTech", "Hybrid", "Open-source"]
   },
   {
-    "id": "job_003",
+    "id": "00000000-0000-0000-0000-000000000003",
     "company": {
       "name": "Pluto AI",
       "logo_url": "/logos/pluto.svg",
@@ -107,7 +107,7 @@
     "tags": ["AI", "LangChain", "Full-Stack", "Remote-first", "Early-stage"]
   },
   {
-    "id": "job_004",
+    "id": "00000000-0000-0000-0000-000000000004",
     "company": {
       "name": "Infosys BPM",
       "logo_url": "/logos/infosys.svg",
@@ -143,7 +143,7 @@
     "tags": ["Java", "Backend", "On-site", "Enterprise", "Relocation required"]
   },
   {
-    "id": "job_005",
+    "id": "00000000-0000-0000-0000-000000000005",
     "company": {
       "name": "Codeant AI",
       "logo_url": "/logos/codeant.svg",

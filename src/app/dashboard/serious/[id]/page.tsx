@@ -367,21 +367,18 @@ export default function SeriousModePage({
                 Analyzing capability gaps…
               </div>
             ) : displayGaps.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
+              <ul className="flex flex-col gap-2">
                 {displayGaps.map((gap, i) => (
-                  <Badge
+                  <li
                     key={i}
-                    className="text-[11px] font-semibold px-2 py-1 rounded-md max-w-full whitespace-normal text-left"
-                    style={{
-                      background: "rgba(239,68,68,0.1)",
-                      border: "1px solid rgba(239,68,68,0.25)",
-                      color: "#F87171",
-                    }}
+                    className="flex items-start gap-2 text-[12.5px] font-medium leading-relaxed"
+                    style={{ color: "#FCA5A5" }}
                   >
-                    {gap}
-                  </Badge>
+                    <span className="mt-[2px] shrink-0 text-xs text-[#EF4444]">✕</span>
+                    <span>{gap}</span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             ) : job.match_score >= 70 ? (
               <p className="text-[12px] font-semibold" style={{ color: "#00FFC2" }}>
                 No gaps detected 🎯 — strong alignment across the board.
