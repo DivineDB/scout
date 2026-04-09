@@ -17,8 +17,11 @@ export async function POST(req: Request) {
   try {
     const body: ProfileUpdate = await req.json();
 
-    // Upsert into user_profile using fixed 'main' key
-    const { error: upsertError } = await supabase
+    console.log("[Profile] Upserting profile override:", JSON.stringify(body, null, 2));
+
+    // Upsert into user_profile using fixed 'main' key.
+    // onConflict: 'profile_key' ensures INSERT on first save, UPDATE thereafter.
+    const { data: savedProfile, error: upsertError } = await supabase
       .from("user_profile")
       .upsert(
         {
@@ -31,26 +34,37 @@ export async function POST(req: Request) {
           updated_at: new Date().toISOString(),
         },
         { onConflict: "profile_key" }
-      );
+      )
+      .select()
+      .single();
 
-    if (upsertError) throw upsertError;
+    if (upsertError) {
+      console.error("[Profile] Upsert error:", upsertError);
+      throw upsertError;
+    }
 
-    // Flag all serious + casual jobs as stale (match needs re-validation)
+    console.log("[Profile] Saved successfully:", savedProfile?.id);
+
+    // Flag all jobs as stale (match needs re-validation against new profile)
     const { error: staleError } = await supabase
       .from("jobs")
       .update({ match_stale: true, updated_at: new Date().toISOString() })
       .in("status", ["casual", "serious"]);
 
     if (staleError) {
-      // Non-fatal: log but don't fail the request
-      console.warn("Failed to flag jobs as stale:", staleError.message);
+      console.warn("[Profile] Failed to flag jobs as stale:", staleError.message);
     }
 
-    return NextResponse.json({ success: true, stale_flagged: !staleError });
-  } catch (error) {
-    console.error("Error updating profile:", error);
+    // Return the saved row so the client can sync its local state
+    return NextResponse.json({
+      success: true,
+      profile: savedProfile,
+      stale_flagged: !staleError,
+    });
+  } catch (error: any) {
+    console.error("[Profile] Error updating profile:", error?.message ?? error);
     return NextResponse.json(
-      { error: "Failed to update profile." },
+      { error: error?.message ?? "Failed to update profile." },
       { status: 500 }
     );
   }

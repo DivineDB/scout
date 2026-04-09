@@ -19,6 +19,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "jobId is required" }, { status: 400 });
     }
 
+    console.log(`[Distill] Incoming jobId: "${jobId}" (type: ${typeof jobId})`);
+
     // 1. Fetch the existing job row
     const { data: existingJob, error: fetchError } = await supabaseAdmin
       .from("jobs")
@@ -26,8 +28,13 @@ export async function POST(req: Request) {
       .eq("id", jobId)
       .single();
 
+    console.log(`[Distill] Fetch result — found: ${!!existingJob}, error: ${fetchError?.message ?? "none"}`);
+
     if (fetchError || !existingJob) {
-      return NextResponse.json({ error: "Job not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: `Job not found for id: ${jobId}`, supabase_error: fetchError?.message },
+        { status: 404 }
+      );
     }
 
     const applyUrl: string = existingJob.apply_url;

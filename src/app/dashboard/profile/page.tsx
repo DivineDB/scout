@@ -3,7 +3,8 @@
 import React, { useEffect, useState, useCallback } from "react";
 import meData from "@/data/me.json";
 import { Persona } from "@/types/persona";
-import { Loader2, Pencil, X, Check, AlertTriangle } from "lucide-react";
+import { Loader2, Pencil, X, Check } from "lucide-react";
+import { toast } from "sonner";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface ProfileOverride {
@@ -98,24 +99,6 @@ function EditInput({
   );
 }
 
-// ── Stale banner ─────────────────────────────────────────────────────────────
-function StaleBanner() {
-  return (
-    <div
-      className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold"
-      style={{
-        background: "rgba(245,158,11,0.1)",
-        border: "1px solid rgba(245,158,11,0.25)",
-        color: "#F59E0B",
-      }}
-    >
-      <AlertTriangle size={15} />
-      <span>
-        Profile saved — jobs flagged as <strong>stale</strong> and queued for re-validation.
-      </span>
-    </div>
-  );
-}
 
 // ── Main page ────────────────────────────────────────────────────────────────
 export default function ProfilePage() {
@@ -124,7 +107,6 @@ export default function ProfilePage() {
   // Load profile override from Supabase
   const [override, setOverride] = useState<ProfileOverride | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [staleBanner, setStaleBanner] = useState(false);
 
   // Active section edit states
   const [editingSection, setEditingSection] = useState<
@@ -173,7 +155,7 @@ export default function ProfilePage() {
 
   const cancelEdit = () => setEditingSection(null);
 
-  // Save changes to Supabase
+  // Save changes to Supabase via toast.promise for instant feedback
   const saveSection = async () => {
     setIsSaving(true);
     try {
@@ -193,18 +175,36 @@ export default function ProfilePage() {
         skills: parsedSkills,
       };
 
-      const res = await fetch("/api/profile/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) throw new Error("Save failed");
-
-      setOverride(body);
-      setEditingSection(null);
-      setStaleBanner(true);
-      setTimeout(() => setStaleBanner(false), 6000);
+      await toast.promise(
+        fetch("/api/profile/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }).then(async (res) => {
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Save failed");
+          // Sync local state from server response (source of truth)
+          if (data.profile) {
+            setOverride({
+              city: data.profile.city,
+              state: data.profile.state,
+              salary_min: data.profile.salary_min,
+              salary_ideal: data.profile.salary_ideal,
+              skills: data.profile.skills,
+            });
+          } else {
+            // Fallback: use draft body if server didn't return profile
+            setOverride(body);
+          }
+          setEditingSection(null);
+          return data;
+        }),
+        {
+          loading: "Saving changes...",
+          success: "Profile updated! Jobs flagged for re-validation.",
+          error: (err) => `Failed to save: ${err.message}`,
+        }
+      );
     } catch (err) {
       console.error("Error saving profile:", err);
     } finally {
@@ -221,7 +221,10 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex-1 overflow-auto p-8 relative min-h-screen" style={{ background: "var(--background)", color: "var(--foreground)" }}>
+    <div
+      className="flex-1 overflow-auto p-8 relative min-h-screen"
+      style={{ background: "#050505", color: "var(--foreground)" }}
+    >
       {/* Ambient glow */}
       <div
         className="pointer-events-none fixed inset-0 -z-10"
@@ -245,7 +248,6 @@ export default function ProfilePage() {
           </p>
         </header>
 
-        {staleBanner && <StaleBanner />}
 
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
