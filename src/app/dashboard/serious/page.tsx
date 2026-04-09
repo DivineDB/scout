@@ -1,9 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { JobPost } from "@/types/job";
 import { supabase } from "@/lib/supabase";
-import { Loader2 } from "lucide-react";
+import { Loader2, Info } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
+
+// ─── Score badge helpers (mirrors JobCard.tsx) ────────────────────────────────
+function getScoreStyle(score: number): React.CSSProperties {
+  if (score >= 90) return { color: "#0F172A",  background: "#00FFC2",               border: "1px solid rgba(0,255,194,0.5)" };
+  if (score >= 70) return { color: "#1D4ED8",  background: "rgba(59,130,246,0.1)",  border: "1px solid rgba(59,130,246,0.25)" };
+  if (score >= 50) return { color: "#B45309",  background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)" };
+  return              { color: "#B91C1C",  background: "rgba(239,68,68,0.1)",  border: "1px solid rgba(239,68,68,0.2)" };
+}
 
 export default function SeriousQueuePage() {
   const [jobs, setJobs] = useState<JobPost[]>([]);
@@ -55,43 +70,99 @@ export default function SeriousQueuePage() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {jobs.map((job) => (
-              <div 
-                key={job.id} 
-                className="group flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-[#FBFBFB] hover:shadow-sm transition-all"
-              >
-                <div className="flex-1 min-w-0 pr-4">
-                  <div className="flex flex-col gap-0.5">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 truncate">
-                      {job.company.name}
-                    </p>
-                    <h3 className="text-base font-bold leading-snug text-slate-900 truncate">
-                      {job.role}
-                    </h3>
-                  </div>
-                </div>
+            {jobs.map((job) => {
+              const scoreStyle = getScoreStyle(job.match_score);
+              const hasInsight = !!(job.match_explanation || (job.missing_skills && job.missing_skills.length > 0));
 
-                <div className="flex items-center gap-6 shrink-0">
-                  <div className="flex flex-col items-end">
-                    <span className="text-xs font-bold text-slate-900">₹{job.pay?.min}L - ₹{job.pay?.max}L</span>
-                    <span className="text-[10px] font-semibold text-slate-500">{job.remote_status}</span>
-                  </div>
-                  
-                  <div className="w-16 text-right">
-                    <span 
-                      className="inline-flex items-center rounded-md px-2 py-1 text-xs font-bold"
-                      style={{
-                        background: "rgba(0, 255, 194, 0.15)", // Carbon Mint
-                        border: "1px solid rgba(0, 255, 194, 0.3)",
-                        color: "#047857"
-                      }}
-                    >
-                      {job.match_score}%
-                    </span>
-                  </div>
+              return (
+                <div key={job.id} className="relative group">
+                  {/* Clickable row → workspace */}
+                  <Link
+                    href={`/dashboard/serious/${job.id}`}
+                    className="flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-[#FBFBFB] hover:border-slate-300 hover:shadow-sm transition-all duration-150"
+                  >
+                    {/* Left: company + role */}
+                    <div className="flex-1 min-w-0 pr-4">
+                      <div className="flex flex-col gap-0.5">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 truncate">
+                          {job.company.name}
+                        </p>
+                        <h3 className="text-base font-bold leading-snug text-slate-900 truncate">
+                          {job.role}
+                        </h3>
+                      </div>
+                    </div>
+
+                    {/* Right: pay + remote + score + ⓘ */}
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="flex flex-col items-end">
+                        <span className="text-xs font-bold text-slate-900">
+                          ₹{job.pay?.min}L – ₹{job.pay?.max}L
+                        </span>
+                        <span className="text-[10px] font-semibold text-slate-500">
+                          {job.remote_status}
+                        </span>
+                      </div>
+
+                      {/* Colour-coded match score */}
+                      <span
+                        className="inline-flex items-center rounded-md px-2 py-1 text-xs font-bold tabular-nums"
+                        style={scoreStyle}
+                      >
+                        {job.match_score}%
+                      </span>
+
+                      {/* ⓘ Popover — stop propagation so Link doesn't fire */}
+                      {hasInsight && (
+                        <Popover>
+                          <PopoverTrigger
+                            className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded"
+                            onClick={(e) => e.preventDefault()}
+                          >
+                            <Info size={15} />
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="w-80 p-4 text-sm z-50 bg-white border border-slate-200 shadow-xl rounded-xl"
+                            onClick={(e) => e.preventDefault()}
+                          >
+                            <div className="space-y-3">
+                              {job.match_explanation && (
+                                <div>
+                                  <h4 className="font-bold text-[11px] uppercase tracking-widest text-slate-400 mb-1.5">
+                                    Why this job?
+                                  </h4>
+                                  <p className="text-slate-700 text-[12.5px] leading-relaxed font-medium">
+                                    {job.match_explanation}
+                                  </p>
+                                </div>
+                              )}
+                              {job.missing_skills && job.missing_skills.length > 0 && (
+                                <div>
+                                  <h4 className="font-bold text-[11px] uppercase tracking-widest text-slate-400 mb-1.5">
+                                    Skill Gaps
+                                  </h4>
+                                  <div className="flex flex-wrap gap-1">
+                                    {job.missing_skills.map((skill) => (
+                                      <Badge
+                                        key={skill}
+                                        variant="destructive"
+                                        className="bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 px-1.5 py-0.5 text-[10px] font-semibold"
+                                      >
+                                        {skill}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                    </div>
+                  </Link>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
