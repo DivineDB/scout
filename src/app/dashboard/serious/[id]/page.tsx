@@ -70,11 +70,13 @@ export default function SeriousModePage({
   // ── Persist hook to Supabase ────────────────────────────────────────────────
   async function persistHook(jobId: string, hook: string) {
     try {
-      const { error } = await supabase
-        .from("jobs")
-        .update({ generated_hook: hook, updated_at: new Date().toISOString() })
-        .eq("id", jobId);
-      if (error) console.warn("Failed to persist hook:", error.message);
+      const res = await fetch("/api/job/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId, updates: { generated_hook: hook } }),
+      });
+      const data = await res.json();
+      if (!res.ok) console.warn("Failed to persist hook:", data.error);
     } catch (err) {
       console.warn("Hook persist error:", err);
     }

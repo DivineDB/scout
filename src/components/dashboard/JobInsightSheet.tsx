@@ -28,7 +28,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function CheckRow({ text }: { text: string }) {
   return (
-    <li className="flex items-start gap-2 text-[12.5px]" style={{ color: "#475569" }}>
+    <li className="flex items-start gap-2 text-[12.5px]" style={{ color: "var(--muted-foreground)" }}>
       <span className="mt-0.5 text-[11px]" style={{ color: "#00FFC2" }}>✓</span>
       <span className="leading-relaxed font-medium">{text}</span>
     </li>
@@ -82,14 +82,16 @@ export function JobInsightSheet({
     try {
       const toastId = toast.loading("Moving to Serious Mode...");
 
-      const { error } = await supabase
-        .from("jobs")
-        .update({ status: "serious" })
-        .eq("id", jobId);
+      const res = await fetch("/api/job/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId, updates: { status: "serious" } }),
+      });
+      const data = await res.json();
 
-      if (error) {
+      if (!res.ok) {
         toast.dismiss(toastId);
-        toast.error(`Promote failed: ${error.message}`);
+        toast.error(`Promote failed: ${data.error || "Unknown error"}`);
         return;
       }
 
@@ -135,7 +137,7 @@ export function JobInsightSheet({
               style={{
                 background: "rgba(0, 255, 194, 0.08)",
                 border: "1px solid rgba(0, 255, 194, 0.2)",
-                color: "#1E293B",
+                color: "var(--foreground)",
               }}
             >
               <div className="flex items-center gap-1.5 mb-1.5">
@@ -146,7 +148,7 @@ export function JobInsightSheet({
                   Scout
                 </span>
               </div>
-              <ul className="list-disc pl-4 space-y-1 mt-2 text-slate-700 font-medium">
+              <ul className="list-disc pl-4 space-y-1 mt-2 font-medium" style={{ color: "var(--foreground)" }}>
                 <li>Strong alignment: {job.tech_stack.slice(0, 2).join(", ")}</li>
                 <li>Salary matches your ₹8-14L expectation: ₹{job.pay.min}-{job.pay.max}L</li>
                 <li>{job.match_score >= 80 ? "Highly recommended to apply immediately." : "Moderate match on required experience level."}</li>
@@ -156,7 +158,7 @@ export function JobInsightSheet({
 
           <section>
             <SectionLabel>About the Role</SectionLabel>
-            <p className="text-[12.5px] leading-relaxed font-medium text-slate-600">
+            <p className="text-[12.5px] leading-relaxed font-medium" style={{ color: "var(--muted-foreground)" }}>
               {job.description}
             </p>
           </section>

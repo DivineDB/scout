@@ -32,7 +32,7 @@ export default function RootLayout({
       style={{ backgroundColor: "#050505" }}
     >
       <body className="min-h-full">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+        <ThemeProvider attribute="class" forcedTheme="dark" defaultTheme="dark" enableSystem={false}>
           <TooltipProvider>
             {children}
             <Toaster />
