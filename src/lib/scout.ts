@@ -152,5 +152,17 @@ export async function distillJobData(rawText: string, companyIntel: string): Pro
   }
 
   const parsedData = JSON.parse(response.text);
+
+  // ── Hard validation: match_explanation must be a non-empty string ──────────
+  if (
+    !parsedData.match_explanation ||
+    typeof parsedData.match_explanation !== "string" ||
+    parsedData.match_explanation.trim().length === 0
+  ) {
+    throw new Error(
+      "Distiller returned an empty match_explanation. This field is required."
+    );
+  }
+
   return parsedData;
 }

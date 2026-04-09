@@ -104,4 +104,10 @@ export interface JobPost {
 
   /** Status of the job in the pipeline */
   status: "casual" | "serious";
+
+  /** AI-generated outreach hook (persisted to DB) */
+  hook?: string;
+
+  /** True when user profile changed and match_score needs re-validation */
+  match_stale?: boolean;
 }

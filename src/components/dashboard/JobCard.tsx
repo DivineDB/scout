@@ -165,14 +165,23 @@ export function JobCard({ job, onClick }: { job: JobPost; onClick: (job: JobPost
               <Info size={16} />
             </PopoverTrigger>
             <PopoverContent
-              className="w-80 p-4 text-sm z-50 bg-white border shadow-lg rounded-md"
+              className="w-80 p-4 text-sm z-[9999] border shadow-lg rounded-md"
+              style={{
+                background: "var(--popover)",
+                borderColor: "var(--border-default)",
+                color: "var(--popover-foreground)",
+              }}
               onClick={(e) => e.stopPropagation()}
             >
               <div className="space-y-4">
                 <div>
-                  <h4 className="font-semibold mb-1 text-slate-900">Why this match?</h4>
-                  <p className="text-slate-600 leading-snug">
-                    {job.match_explanation || "Alignment based on Tech Stack & Preferences."}
+                  <h4 className="font-semibold mb-1 text-slate-900 dark:text-slate-100">Why this match?</h4>
+                  <p className="text-slate-600 dark:text-slate-300 leading-snug">
+                    {job.match_explanation || (
+                      <span className="italic text-slate-400 dark:text-slate-500">
+                        Match explanation not available — re-distill this job to generate one.
+                      </span>
+                    )}
                   </p>
                 </div>
                 {job.missing_skills && job.missing_skills.length > 0 && (

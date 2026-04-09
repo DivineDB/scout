@@ -42,18 +42,19 @@ function NavItem({ href, icon, label, active }: { href: string; icon: string; la
       <TooltipTrigger>
         <Link
           href={href}
-          className="group relative flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-150"
+          className="group relative flex h-10 w-10 items-center justify-center rounded-lg transition-all duration-200"
           style={{
             background: active ? "var(--sidebar-accent)" : "transparent",
             border: active
-              ? "1px solid var(--sidebar-border)"
+              ? "1px solid rgba(0, 255, 194, 0.3)"
               : "1px solid transparent",
+            boxShadow: active ? "var(--mint-nav-glow, 0 0 0 1.5px #00FFC2, 0 0 10px rgba(0, 255, 194, 0.25))" : "none",
           }}
         >
           {active && (
             <span
               className="absolute -left-[13px] top-1/2 h-4 w-[2.5px] -translate-y-1/2 rounded-r-full"
-              style={{ background: "var(--sidebar-foreground)" }} 
+              style={{ background: "#00FFC2" }}
               aria-hidden
             />
           )}
@@ -62,8 +63,8 @@ function NavItem({ href, icon, label, active }: { href: string; icon: string; la
       </TooltipTrigger>
       <TooltipContent
         side="right"
-        sideOffset={10}
-        className="rounded-md px-2.5 py-1.5 text-xs font-bold shadow-sm"
+        sideOffset={12}
+        className="rounded-md px-2.5 py-1.5 text-xs font-bold shadow-md z-50"
         style={{
           background: "var(--popover)",
           border: "1px solid var(--border-default)",
@@ -88,12 +89,15 @@ export function Sidebar() {
   return (
     <aside
       id="scout-sidebar"
-      className="glass glass-dark fixed inset-y-0 left-0 z-40 flex w-16 flex-col items-center py-5"
+      className="glass-dark fixed inset-y-0 left-0 z-40 flex w-16 flex-col items-center pt-8 pb-5"
       style={{
         borderRight: "1px solid var(--border-default)",
+        background: "rgba(5, 5, 5, 0.92)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
       }}
     >
-      <nav className="flex flex-1 flex-col items-center justify-center gap-2">
+      <nav className="flex flex-1 flex-col items-center justify-center gap-3">
         {mounted && NAV.map((item) => (
           <NavItem
             key={item.href}

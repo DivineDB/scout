@@ -48,15 +48,20 @@ export default function SeriousQueuePage() {
 
   return (
     <div className="flex-1 overflow-auto p-8 relative">
-      <div className="pointer-events-none fixed inset-0 -z-10 h-full w-full bg-[#FBFBFB] [background:radial-gradient(125%_125%_at_50%_10%,#fff_40%,#F1F5F9_100%)]" />
+      <div
+        className="pointer-events-none fixed inset-0 -z-10"
+        style={{
+          background: "radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0,255,194,0.03) 0%, transparent 60%)",
+        }}
+      />
 
       <div className="mx-auto max-w-5xl space-y-6">
         <header className="mb-8 flex flex-col gap-1">
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">
+          <h1 className="text-3xl font-black tracking-tight" style={{ color: "#FAFAFA" }}>
             Serious Queue 🎯
           </h1>
-          <p className="text-sm font-medium text-slate-500">
-            High-match opportunities prioritized for customized applications and referrals.
+          <p className="text-sm font-medium" style={{ color: "#A1A1AA" }}>
+            High-match opportunities prioritized for customized applications.
           </p>
         </header>
 
@@ -65,9 +70,15 @@ export default function SeriousQueuePage() {
             <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
           </div>
         ) : jobs.length === 0 ? (
-          <div className="glass p-12 rounded-2xl border border-slate-200 bg-white/50 text-center">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400">No serious jobs yet</h3>
-            <p className="text-slate-500 mt-2 font-medium">Promote jobs from the Casual Hunt to build your pipeline.</p>
+          <div
+            className="p-12 rounded-2xl border text-center"
+            style={{
+              background: "#121212",
+              borderColor: "rgba(255,255,255,0.08)",
+            }}
+          >
+            <h3 className="text-sm font-bold uppercase tracking-widest" style={{ color: "#71717A" }}>No serious jobs yet</h3>
+            <p className="mt-2 font-medium" style={{ color: "#A1A1AA" }}>Promote jobs from the Casual Hunt to build your pipeline.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
@@ -79,15 +90,25 @@ export default function SeriousQueuePage() {
                   {/* Clickable row → workspace */}
                   <Link
                     href={`/dashboard/serious/${job.id}`}
-                    className="flex items-center justify-between p-4 rounded-xl border border-slate-200 bg-[#FBFBFB] hover:border-slate-300 hover:shadow-sm transition-all duration-150"
+                    className="flex items-center justify-between p-4 rounded-xl transition-all duration-150"
+                    style={{
+                      background: "#121212",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                    }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.15)";
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.08)";
+                    }}
                   >
                     {/* Left: company + role */}
                     <div className="flex-1 min-w-0 pr-4">
                       <div className="flex flex-col gap-0.5">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 truncate">
+                        <p className="text-[10px] font-bold uppercase tracking-widest truncate" style={{ color: "#71717A" }}>
                           {job.company.name}
                         </p>
-                        <h3 className="text-base font-bold leading-snug text-slate-900 truncate">
+                        <h3 className="text-base font-bold leading-snug truncate" style={{ color: "#FAFAFA" }}>
                           {job.role}
                         </h3>
                       </div>
@@ -96,10 +117,10 @@ export default function SeriousQueuePage() {
                     {/* Right: pay + remote + score + ⓘ */}
                     <div className="flex items-center gap-4 shrink-0">
                       <div className="flex flex-col items-end">
-                        <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                        <span className="text-xs font-bold" style={{ color: "#FAFAFA" }}>
                           {formatSalary(job.pay?.min)} – {formatSalary(job.pay?.max)}
                         </span>
-                        <span className="text-[10px] font-semibold text-slate-500">
+                        <span className="text-[10px] font-semibold" style={{ color: "#71717A" }}>
                           {job.remote_status}
                         </span>
                       </div>
@@ -121,28 +142,41 @@ export default function SeriousQueuePage() {
                             <Info size={15} />
                           </PopoverTrigger>
                           <PopoverContent
-                            className="w-80 p-4 text-sm z-50 bg-white dark:bg-[#121212] border border-slate-200 dark:border-slate-800 shadow-xl rounded-xl relative overflow-visible"
+                            className="w-80 p-4 text-sm z-[9999] shadow-xl rounded-xl overflow-visible"
+                            style={{
+                              background: "#121212",
+                              border: "1px solid rgba(255,255,255,0.1)",
+                              color: "#A1A1AA",
+                            }}
                           >
                             <div className="space-y-3">
                               <div>
-                                <h4 className="font-bold text-[11px] uppercase tracking-widest text-slate-400 mb-1.5">
+                                <h4 className="font-bold text-[11px] uppercase tracking-widest mb-1.5" style={{ color: "#71717A" }}>
                                   Why this job?
                                 </h4>
-                                <p className="text-slate-700 dark:text-slate-300 text-[12.5px] leading-relaxed font-medium">
-                                  {job.match_explanation || "Analyzing..."}
+                                <p className="text-[12.5px] leading-relaxed font-medium" style={{ color: "#A1A1AA" }}>
+                                  {job.match_explanation || (
+                                    <span className="italic" style={{ color: "#52525B" }}>
+                                      Match explanation not available.
+                                    </span>
+                                  )}
                                 </p>
                               </div>
                               {job.missing_skills && job.missing_skills.length > 0 && (
                                 <div>
-                                  <h4 className="font-bold text-[11px] uppercase tracking-widest text-slate-400 mb-1.5">
+                                  <h4 className="font-bold text-[11px] uppercase tracking-widest mb-1.5" style={{ color: "#71717A" }}>
                                     Skill Gaps
                                   </h4>
                                   <div className="flex flex-wrap gap-1">
                                     {job.missing_skills.map((skill) => (
                                       <Badge
                                         key={skill}
-                                        variant="destructive"
-                                        className="bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 border border-red-200 dark:border-red-900/30 px-1.5 py-0.5 text-[10px] font-semibold"
+                                        className="text-[10px] font-semibold px-1.5 py-0.5"
+                                        style={{
+                                          background: "rgba(239,68,68,0.12)",
+                                          border: "1px solid rgba(239,68,68,0.25)",
+                                          color: "#F87171",
+                                        }}
                                       >
                                         {skill}
                                       </Badge>
