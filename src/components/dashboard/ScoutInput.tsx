@@ -49,12 +49,17 @@ export function ScoutInput() {
     <form onSubmit={handleScout} className="mb-6 flex w-full max-w-xl items-center gap-2">
       <div className="relative flex-1">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-          <Search className="h-4 w-4 text-slate-400" />
+          <Search className="h-4 w-4" style={{ color: "var(--muted-foreground)" }} />
         </div>
         <input
           type="url"
-          placeholder="Paste URL to manually scout..."
-          className="block w-full rounded-full border-0 py-2.5 pl-10 pr-4 text-sm tracking-tight text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 transition-shadow placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-slate-900 bg-white/50 backdrop-blur-md hover:bg-white"
+          placeholder="Paste job URL to scout..."
+          className="block w-full rounded-full py-2.5 pl-10 pr-4 text-sm tracking-tight transition-all focus:outline-none focus:ring-2"
+          style={{
+            background: "var(--card)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            color: "var(--foreground)",
+          }}
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           required
@@ -64,7 +69,8 @@ export function ScoutInput() {
       <button
         type="submit"
         disabled={isLoading || !url}
-        className="flex items-center justify-center gap-2 rounded-full bg-slate-900 px-5 py-2.5 text-sm font-semibold tracking-tight text-white shadow-sm ring-1 ring-inset ring-slate-900 transition-all hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold tracking-tight transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        style={{ background: "#00FFC2", color: "#050505" }}
       >
         {isLoading ? (
           <>
