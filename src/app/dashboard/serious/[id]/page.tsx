@@ -72,7 +72,7 @@ export default function SeriousModePage({
     try {
       const { error } = await supabase
         .from("jobs")
-        .update({ hook, updated_at: new Date().toISOString() })
+        .update({ generated_hook: hook, updated_at: new Date().toISOString() })
         .eq("id", jobId);
       if (error) console.warn("Failed to persist hook:", error.message);
     } catch (err) {
@@ -149,8 +149,9 @@ export default function SeriousModePage({
         setJob(fetched);
 
         // Hook: use persisted value if exists, otherwise generate
-        if (fetched.hook && fetched.hook.trim().length > 0) {
-          setHookText(fetched.hook);
+        const storedHook = (fetched as any).generated_hook;
+        if (storedHook && storedHook.trim().length > 0) {
+          setHookText(storedHook);
         } else {
           generateHook(fetched);
         }

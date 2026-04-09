@@ -107,6 +107,7 @@ export interface JobPost {
 
   /** AI-generated outreach hook (persisted to DB) */
   hook?: string;
+  generated_hook?: string;
 
   /** True when user profile changed and match_score needs re-validation */
   match_stale?: boolean;

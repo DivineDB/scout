@@ -72,44 +72,54 @@ export function JobInsightSheet({
   };
 
   const promoteJobToSerious = async () => {
-    const promise = (async () => {
+    // Validate ID before attempting update
+    const jobId = job?.id;
+    if (!jobId || typeof jobId !== "string" || jobId.trim() === "") {
+      toast.error("Cannot promote: Job ID is missing or invalid.");
+      return;
+    }
+
+    try {
+      const toastId = toast.loading("Moving to Serious Mode...");
+
       const { error } = await supabase
         .from("jobs")
         .update({ status: "serious" })
-        .eq("id", job.id);
-      if (error) throw error;
-    })();
+        .eq("id", jobId);
 
-    toast.promise(promise, {
-      loading: "Moving to Serious Mode...",
-      success: () => {
-        onClose();
-        router.push("/dashboard/serious");
-        return "Added to your Queue!";
-      },
-      error: "Failed to update status.",
-    });
+      if (error) {
+        toast.dismiss(toastId);
+        toast.error(`Promote failed: ${error.message}`);
+        return;
+      }
+
+      toast.dismiss(toastId);
+      toast.success("Added to your Serious Queue!");
+      onClose();
+      router.push("/dashboard/serious");
+    } catch (err: any) {
+      toast.error(`Unexpected error: ${err?.message ?? String(err)}`);
+    }
   };
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent
-        className="flex flex-col outline-none w-[90vw] max-w-[440px] p-0 sm:max-w-[440px]"
+        className="flex flex-col outline-none w-[90vw] max-w-[440px] p-0 sm:max-w-[440px] bg-card"
         style={{
-          background: "#FFFFFF",
-          borderLeft: "1px solid #E2E8F0",
+          borderLeft: "1px solid var(--border)",
         }}
       >
         {/* Header */}
-        <SheetHeader className="border-b px-5 py-4 shrink-0 text-left" style={{ borderColor: "#E2E8F0" }}>
+        <SheetHeader className="border-b px-5 py-4 shrink-0 text-left" style={{ borderColor: "var(--border)" }}>
           <div>
-            <SheetDescription className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
+            <SheetDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               {job.company.name} · {job.company.industry}
             </SheetDescription>
-            <SheetTitle className="text-lg font-bold leading-snug mt-0.5 text-slate-900">
+            <SheetTitle className="text-lg font-bold leading-snug mt-0.5 text-foreground">
               {job.role}
             </SheetTitle>
-            <p className="mt-1 text-xs font-semibold text-slate-600">
+            <p className="mt-1 text-xs font-semibold text-muted-foreground">
               {job.remote_status} · {job.location} · ₹{job.pay.min}–{job.pay.max}L
             </p>
           </div>
@@ -162,13 +172,13 @@ export function JobInsightSheet({
         </div>
 
         {/* Footer */}
-        <SheetFooter className="shrink-0 border-t px-5 py-4" style={{ borderColor: "#E2E8F0" }}>
+        <SheetFooter className="shrink-0 border-t px-5 py-4" style={{ borderColor: "var(--border)" }}>
           <div className="flex w-full flex-col gap-2">
             <Button
               size="lg"
               className="w-full text-sm font-bold shadow-sm hover:scale-[0.99] transition-transform"
               onClick={handleApply}
-              style={{ background: "#0F172A", color: "#FBFBFB" }}
+              style={{ background: "var(--foreground)", color: "var(--background)" }}
             >
               Copy Quick Intro & Apply
             </Button>
@@ -176,10 +186,10 @@ export function JobInsightSheet({
               size="lg"
               variant="outline"
               className="w-full text-sm font-bold"
-              style={{ background: "#F1F5F9", borderColor: "#E2E8F0", color: "#475569" }}
+              style={{ background: "var(--secondary)", borderColor: "var(--border)", color: "var(--muted-foreground)" }}
               onClick={promoteJobToSerious}
             >
-              Promote to Serious Mode
+              🚀 Promote to Serious Mode
             </Button>
           </div>
         </SheetFooter>

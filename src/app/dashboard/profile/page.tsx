@@ -5,6 +5,7 @@ import meData from "@/data/me.json";
 import { Persona } from "@/types/persona";
 import { Loader2, Pencil, X, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface ProfileOverride {
@@ -102,6 +103,7 @@ function EditInput({
 
 // ── Main page ────────────────────────────────────────────────────────────────
 export default function ProfilePage() {
+  const router = useRouter();
   const base = meData as Persona;
 
   // Load profile override from Supabase
@@ -175,6 +177,8 @@ export default function ProfilePage() {
         skills: parsedSkills,
       };
 
+      console.log("Saving Data:", body);
+
       await toast.promise(
         fetch("/api/profile/update", {
           method: "POST",
@@ -182,6 +186,7 @@ export default function ProfilePage() {
           body: JSON.stringify(body),
         }).then(async (res) => {
           const data = await res.json();
+          console.log("Server Response:", data);
           if (!res.ok) throw new Error(data.error || "Save failed");
           // Sync local state from server response (source of truth)
           if (data.profile) {
@@ -197,6 +202,7 @@ export default function ProfilePage() {
             setOverride(body);
           }
           setEditingSection(null);
+          router.refresh();
           return data;
         }),
         {

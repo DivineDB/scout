@@ -17,30 +17,30 @@ export async function POST(req: Request) {
   try {
     const body: ProfileUpdate = await req.json();
 
-    console.log("[Profile] Upserting profile override:", JSON.stringify(body, null, 2));
+    const payload = {
+      profile_key: "main",
+      city: body.city,
+      state: body.state,
+      salary_min: body.salary_min,
+      salary_ideal: body.salary_ideal,
+      skills: body.skills,
+      updated_at: new Date().toISOString(),
+    };
 
-    // Upsert into user_profile using fixed 'main' key.
-    // onConflict: 'profile_key' ensures INSERT on first save, UPDATE thereafter.
+    console.log("[Profile] Upserting payload:", JSON.stringify(payload, null, 2));
+
     const { data: savedProfile, error: upsertError } = await supabase
       .from("user_profile")
-      .upsert(
-        {
-          profile_key: "main",
-          city: body.city,
-          state: body.state,
-          salary_min: body.salary_min,
-          salary_ideal: body.salary_ideal,
-          skills: body.skills,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "profile_key" }
-      )
+      .upsert(payload, { onConflict: "profile_key" })
       .select()
       .single();
 
     if (upsertError) {
-      console.error("[Profile] Upsert error:", upsertError);
-      throw upsertError;
+      console.error("[Profile] Upsert error:", JSON.stringify(upsertError));
+      return NextResponse.json(
+        { error: `Supabase Error: ${JSON.stringify(upsertError)}` },
+        { status: 500 }
+      );
     }
 
     console.log("[Profile] Saved successfully:", savedProfile?.id);
@@ -62,9 +62,10 @@ export async function POST(req: Request) {
       stale_flagged: !staleError,
     });
   } catch (error: any) {
-    console.error("[Profile] Error updating profile:", error?.message ?? error);
+    const errorString = typeof error === 'object' ? JSON.stringify(error) : String(error);
+    console.error("[Profile] Error updating profile:", errorString);
     return NextResponse.json(
-      { error: error?.message ?? "Failed to update profile." },
+      { error: `Server Error: ${errorString}` },
       { status: 500 }
     );
   }

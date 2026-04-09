@@ -13,7 +13,7 @@ export default async function Page() {
 
       <div className="mx-auto max-w-2xl space-y-6">
         <header className="mb-8 flex flex-col gap-1">
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">
+          <h1 className="text-3xl font-black tracking-tight text-foreground">
             Todo List ⚡
           </h1>
           <p className="text-sm font-medium text-slate-500">
@@ -21,7 +21,7 @@ export default async function Page() {
           </p>
         </header>
 
-        <div className="glass p-6 rounded-2xl border border-slate-200 bg-white/50 shadow-sm">
+        <div className="glass p-6 rounded-2xl border border-border bg-card shadow-sm">
           {todos && todos.length > 0 ? (
             <ul className="divide-y divide-slate-100">
               {todos.map((todo) => (
