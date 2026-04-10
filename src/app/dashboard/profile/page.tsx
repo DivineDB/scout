@@ -1,11 +1,18 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import meData from "@/data/me.json";
 import { Persona } from "@/types/persona";
-import { Loader2, Pencil, X, Check } from "lucide-react";
+import { Loader2, X, Check, Zap, ChevronRight, Settings2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface ProfileOverride {
@@ -15,6 +22,8 @@ interface ProfileOverride {
   salary_ideal?: number;
   skills?: Record<string, string[]>;
 }
+
+type TabId = "identity" | "search-logic" | "tech-arsenal";
 
 // ── Helper ───────────────────────────────────────────────────────────────────
 function mergeProfile(base: Persona, override: ProfileOverride | null): Persona {
@@ -37,93 +46,269 @@ function mergeProfile(base: Persona, override: ProfileOverride | null): Persona 
   };
 }
 
-// ── Section wrapper ──────────────────────────────────────────────────────────
-function SectionCard({
+// ── Ambient Glass Card ────────────────────────────────────────────────────────
+function GlassCard({
   children,
   className = "",
+  onClick,
+  clickable = false,
 }: {
   children: React.ReactNode;
   className?: string;
+  onClick?: () => void;
+  clickable?: boolean;
 }) {
   return (
     <div
-      className={`rounded-2xl p-6 flex flex-col gap-4 ${className}`}
+      onClick={onClick}
+      className={`rounded-2xl p-6 flex flex-col gap-4 relative overflow-hidden transition-all duration-300 ${
+        clickable
+          ? "cursor-pointer group hover:border-[rgba(0,255,194,0.3)] hover:-translate-y-0.5 hover:shadow-[0_8px_30px_rgba(0,255,194,0.08)]"
+          : ""
+      } ${className}`}
       style={{
-        background: "var(--card)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        boxShadow: "0 2px 16px rgba(0,0,0,0.35)",
+        background: "rgba(18,18,18,0.8)",
+        border: "1px solid rgba(255,255,255,0.07)",
+        boxShadow: "0 2px 20px rgba(0,0,0,0.4)",
+        backdropFilter: "blur(12px)",
       }}
     >
+      {clickable && (
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,255,194,0.04) 0%, transparent 70%)",
+          }}
+        />
+      )}
       {children}
+      {clickable && (
+        <div
+          className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-200 group-hover:translate-x-0 translate-x-1"
+        >
+          <ChevronRight size={14} style={{ color: "#00FFC2" }} />
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Field label ──────────────────────────────────────────────────────────────
+// ── Field label ───────────────────────────────────────────────────────────────
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
     <span
       className="text-[10px] font-bold uppercase tracking-widest"
-      style={{ color: "var(--muted-foreground)" }}
+      style={{ color: "#71717A" }}
     >
       {children}
     </span>
   );
 }
 
-// ── Edit input ───────────────────────────────────────────────────────────────
-function EditInput({
+// ── Sheet Input ───────────────────────────────────────────────────────────────
+function SheetInput({
+  label,
   value,
   onChange,
   type = "text",
   placeholder,
 }: {
+  label: string;
   value: string | number;
   onChange: (v: string) => void;
   type?: string;
   placeholder?: string;
 }) {
   return (
-    <input
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="w-full rounded-lg px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 transition-all"
-      style={{
-        background: "#1A1A1A",
-        border: "1px solid rgba(255,255,255,0.12)",
-        color: "var(--foreground)",
-        "--tw-ring-color": "#00FFC2",
-      } as React.CSSProperties}
-    />
+    <div className="space-y-1.5">
+      <FieldLabel>{label}</FieldLabel>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none transition-all"
+        style={{
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          color: "#FAFAFA",
+          boxShadow: "inset 0 1px 2px rgba(0,0,0,0.3)",
+        }}
+        onFocus={(e) => {
+          e.target.style.border = "1px solid rgba(0,255,194,0.4)";
+          e.target.style.boxShadow = "0 0 0 3px rgba(0,255,194,0.06), inset 0 1px 2px rgba(0,0,0,0.3)";
+        }}
+        onBlur={(e) => {
+          e.target.style.border = "1px solid rgba(255,255,255,0.1)";
+          e.target.style.boxShadow = "inset 0 1px 2px rgba(0,0,0,0.3)";
+        }}
+      />
+    </div>
   );
 }
 
+// ── Skill Badge ───────────────────────────────────────────────────────────────
+function SkillBadge({
+  skill,
+  onRemove,
+}: {
+  skill: string;
+  onRemove: () => void;
+}) {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold group/badge transition-all duration-150"
+      style={{
+        background: "rgba(0,255,194,0.08)",
+        border: "1px solid rgba(0,255,194,0.2)",
+        color: "#00FFC2",
+      }}
+    >
+      {skill}
+      <button
+        onClick={onRemove}
+        className="opacity-50 hover:opacity-100 transition-opacity rounded-full"
+        title={`Remove ${skill}`}
+      >
+        <X size={10} />
+      </button>
+    </span>
+  );
+}
 
-// ── Main page ────────────────────────────────────────────────────────────────
+// ── Skill Category Editor ─────────────────────────────────────────────────────
+function SkillCategoryEditor({
+  category,
+  skills,
+  onChange,
+}: {
+  category: string;
+  skills: string[];
+  onChange: (newSkills: string[]) => void;
+}) {
+  const [inputValue, setInputValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const addSkill = (raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+    // Support comma-separated paste
+    const parts = trimmed.split(",").map((s) => s.trim()).filter(Boolean);
+    const newSkills = [...skills];
+    for (const p of parts) {
+      if (!newSkills.includes(p)) newSkills.push(p);
+    }
+    onChange(newSkills);
+    setInputValue("");
+  };
+
+  return (
+    <div
+      className="rounded-xl p-3 space-y-2"
+      style={{
+        background: "rgba(255,255,255,0.025)",
+        border: "1px solid rgba(255,255,255,0.07)",
+      }}
+    >
+      <FieldLabel>{category.replace(/_/g, " ")}</FieldLabel>
+      <div className="flex flex-wrap gap-1.5 min-h-[28px]">
+        {skills.map((skill) => (
+          <SkillBadge
+            key={skill}
+            skill={skill}
+            onRemove={() => onChange(skills.filter((s) => s !== skill))}
+          />
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <input
+          ref={inputRef}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === ",") {
+              e.preventDefault();
+              addSkill(inputValue);
+            }
+          }}
+          placeholder="Add skill, press Enter…"
+          className="flex-1 rounded-lg px-3 py-1.5 text-xs font-medium focus:outline-none transition-all"
+          style={{
+            background: "rgba(0,0,0,0.3)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            color: "#FAFAFA",
+          }}
+          onFocus={(e) => {
+            e.target.style.border = "1px solid rgba(0,255,194,0.35)";
+          }}
+          onBlur={(e) => {
+            e.target.style.border = "1px solid rgba(255,255,255,0.08)";
+          }}
+        />
+        <button
+          onClick={() => addSkill(inputValue)}
+          className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-80"
+          style={{ background: "rgba(0,255,194,0.12)", color: "#00FFC2", border: "1px solid rgba(0,255,194,0.2)" }}
+        >
+          <Check size={12} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Tab Button (inside sheet) ─────────────────────────────────────────────────
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="px-4 py-2 rounded-lg text-xs font-bold transition-all duration-200"
+      style={
+        active
+          ? {
+              background: "rgba(0,255,194,0.12)",
+              border: "1px solid rgba(0,255,194,0.3)",
+              color: "#00FFC2",
+            }
+          : {
+              background: "transparent",
+              border: "1px solid transparent",
+              color: "#71717A",
+            }
+      }
+    >
+      {children}
+    </button>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function ProfilePage() {
   const router = useRouter();
   const base = meData as Persona;
 
-  // Load profile override from Supabase
   const [override, setOverride] = useState<ProfileOverride | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabId>("identity");
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Active section edit states
-  const [editingSection, setEditingSection] = useState<
-    "identity" | "preferences" | "skills" | null
-  >(null);
-
-  // Draft values (local edit state)
+  // Draft values (unified — all edits happen inside the sheet)
   const [draftCity, setDraftCity] = useState("");
   const [draftState, setDraftState] = useState("");
   const [draftSalaryMin, setDraftSalaryMin] = useState<number>(0);
   const [draftSalaryIdeal, setDraftSalaryIdeal] = useState<number>(0);
-  const [draftSkills, setDraftSkills] = useState<Record<string, string>>({}); // comma-separated per category
-  const [isSaving, setIsSaving] = useState(false);
+  const [draftSkills, setDraftSkills] = useState<Record<string, string[]>>({});
 
-  // Merged resolved profile
   const profile = mergeProfile(base, override);
 
   // Fetch profile override on mount
@@ -137,82 +322,95 @@ export default function ProfilePage() {
       .finally(() => setIsLoading(false));
   }, []);
 
-  // Start editing a section
-  const startEdit = useCallback(
-    (section: "identity" | "preferences" | "skills") => {
-      setEditingSection(section);
+  // Seed draft state from current profile whenever sheet opens
+  const openSheet = useCallback(
+    (tab: TabId = "identity") => {
       setDraftCity(profile.location.city);
       setDraftState(profile.location.state);
       setDraftSalaryMin(profile.preferences.desired_pay_inr_lpa.min);
       setDraftSalaryIdeal(profile.preferences.desired_pay_inr_lpa.ideal);
-
-      const skillDraft: Record<string, string> = {};
+      // Deep-clone skills
+      const cloned: Record<string, string[]> = {};
       for (const [cat, arr] of Object.entries(profile.skills)) {
-        skillDraft[cat] = arr.join(", ");
+        cloned[cat] = [...arr];
       }
-      setDraftSkills(skillDraft);
+      setDraftSkills(cloned);
+      setActiveTab(tab);
+      setSheetOpen(true);
     },
     [profile]
   );
 
-  const cancelEdit = () => setEditingSection(null);
+  const updateDraftSkillCategory = (category: string, newSkills: string[]) => {
+    setDraftSkills((prev) => ({ ...prev, [category]: newSkills }));
+  };
 
-  // Save changes to Supabase via toast.promise for instant feedback
-  const saveSection = async () => {
+  // Update Scout Brain
+  const handleUpdateBrain = async () => {
     setIsSaving(true);
-    try {
-      const parsedSkills: Record<string, string[]> = {};
-      for (const [cat, csv] of Object.entries(draftSkills)) {
-        parsedSkills[cat] = csv
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
-      }
 
+    // Optimistic toast immediately
+    toast("Syncing your profile with Scout…", {
+      icon: "⚡",
+      style: {
+        background: "#0A0A0A",
+        border: "1px solid rgba(0,255,194,0.2)",
+        color: "#00FFC2",
+      },
+    });
+
+    try {
       const body: ProfileOverride = {
         city: draftCity,
         state: draftState,
         salary_min: Number(draftSalaryMin),
         salary_ideal: Number(draftSalaryIdeal),
-        skills: parsedSkills,
+        skills: draftSkills,
       };
 
-      console.log("Saving Data:", body);
+      const res = await fetch("/api/profile/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
 
-      await toast.promise(
-        fetch("/api/profile/update", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        }).then(async (res) => {
-          const data = await res.json();
-          console.log("Server Response:", data);
-          if (!res.ok) throw new Error(data.error || "Save failed");
-          // Sync local state from server response (source of truth)
-          if (data.profile) {
-            setOverride({
-              city: data.profile.city,
-              state: data.profile.state,
-              salary_min: data.profile.salary_min,
-              salary_ideal: data.profile.salary_ideal,
-              skills: data.profile.skills,
-            });
-          } else {
-            // Fallback: use draft body if server didn't return profile
-            setOverride(body);
-          }
-          setEditingSection(null);
-          router.refresh();
-          return data;
-        }),
-        {
-          loading: "Saving changes...",
-          success: "Profile updated! Jobs flagged for re-validation.",
-          error: (err) => `Failed to save: ${err.message}`,
-        }
-      );
-    } catch (err) {
-      console.error("Error saving profile:", err);
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Update failed");
+      }
+
+      // Sync local override
+      if (data.profile) {
+        setOverride({
+          city: data.profile.city,
+          state: data.profile.state,
+          salary_min: data.profile.salary_min,
+          salary_ideal: data.profile.salary_ideal,
+          skills: data.profile.skills,
+        });
+      } else {
+        setOverride(body);
+      }
+
+      toast.success("Scout logic updated. Matches re-evaluating…", {
+        style: {
+          background: "#0A0A0A",
+          border: "1px solid rgba(0,255,194,0.3)",
+          color: "#FAFAFA",
+        },
+      });
+
+      setSheetOpen(false);
+      router.refresh();
+    } catch (err: any) {
+      toast.error(`Update failed: ${err.message}`, {
+        style: {
+          background: "#0A0A0A",
+          border: "1px solid rgba(239,68,68,0.3)",
+          color: "#FCA5A5",
+        },
+      });
     } finally {
       setIsSaving(false);
     }
@@ -242,325 +440,201 @@ export default function ProfilePage() {
 
       <div className="mx-auto max-w-5xl space-y-8">
         {/* Header */}
-        <header>
-          <h1
-            className="text-3xl font-black tracking-tight"
-            style={{ color: "#FAFAFA" }}
+        <header className="flex items-end justify-between">
+          <div>
+            <h1
+              className="text-3xl font-black tracking-tight"
+              style={{ color: "#FAFAFA" }}
+            >
+              Command Center
+            </h1>
+            <p className="text-sm font-medium mt-1" style={{ color: "#A1A1AA" }}>
+              Click any card to open the Scout Config Hub.
+            </p>
+          </div>
+          <button
+            onClick={() => openSheet("identity")}
+            className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition-all hover:opacity-90 active:scale-95"
+            style={{
+              background: "rgba(0,255,194,0.1)",
+              border: "1px solid rgba(0,255,194,0.25)",
+              color: "#00FFC2",
+            }}
           >
-            Command Center
-          </h1>
-          <p className="text-sm font-medium mt-1" style={{ color: "#A1A1AA" }}>
-            Your profile data — Scout uses this to score every match.
-          </p>
+            <Settings2Icon size={15} />
+            Configure Scout
+          </button>
         </header>
-
 
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-          {/* ── Identity Card ─────────────────────────────────────────────── */}
-          <SectionCard>
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                <div
-                  className="h-14 w-14 rounded-full flex items-center justify-center text-2xl font-black"
-                  style={{
-                    background: "rgba(0,255,194,0.1)",
-                    border: "1px solid rgba(0,255,194,0.25)",
-                    color: "#00FFC2",
-                  }}
-                >
-                  {profile.name.split(" ").map((n) => n[0]).join("")}
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold" style={{ color: "#FAFAFA" }}>
-                    {profile.name}
-                  </h2>
-                  <p className="text-xs font-medium" style={{ color: "#A1A1AA" }}>
-                    {profile.degree} &apos;{profile.graduation_year.toString().slice(2)}
-                  </p>
-                </div>
+          {/* ── Identity Card ──────────────────────────────────────────────── */}
+          <GlassCard clickable onClick={() => openSheet("identity")}>
+            <div className="flex items-center gap-4">
+              <div
+                className="h-14 w-14 shrink-0 rounded-full flex items-center justify-center text-2xl font-black"
+                style={{
+                  background: "rgba(0,255,194,0.1)",
+                  border: "1px solid rgba(0,255,194,0.25)",
+                  color: "#00FFC2",
+                }}
+              >
+                {profile.name.split(" ").map((n) => n[0]).join("")}
               </div>
-              {editingSection !== "identity" && (
-                <button
-                  onClick={() => startEdit("identity")}
-                  className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-bold transition-all hover:opacity-80"
-                  style={{
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    color: "#A1A1AA",
-                  }}
-                >
-                  <Pencil size={11} />
-                  Edit
-                </button>
-              )}
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold truncate" style={{ color: "#FAFAFA" }}>
+                  {profile.name}
+                </h2>
+                <p className="text-xs font-medium" style={{ color: "#A1A1AA" }}>
+                  {profile.degree} &apos;{profile.graduation_year.toString().slice(2)}
+                </p>
+              </div>
             </div>
 
-            {/* Location */}
-            {editingSection === "identity" ? (
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <FieldLabel>City</FieldLabel>
-                  <EditInput value={draftCity} onChange={setDraftCity} placeholder="e.g. Bengaluru" />
-                </div>
-                <div className="space-y-1">
-                  <FieldLabel>State</FieldLabel>
-                  <EditInput value={draftState} onChange={setDraftState} placeholder="e.g. Karnataka" />
-                </div>
-                <div className="flex gap-2 pt-1">
-                  <button
-                    onClick={saveSection}
-                    disabled={isSaving}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-all"
-                    style={{ background: "#00FFC2", color: "#050505" }}
-                  >
-                    {isSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-                    Save
-                  </button>
-                  <button
-                    onClick={cancelEdit}
-                    className="flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-bold"
-                    style={{ background: "rgba(255,255,255,0.06)", color: "#A1A1AA" }}
-                  >
-                    <X size={12} /> Cancel
-                  </button>
-                </div>
+            <div className="space-y-2">
+              <div className="flex flex-col">
+                <FieldLabel>Location</FieldLabel>
+                <span className="text-sm font-medium mt-0.5" style={{ color: "#FAFAFA" }}>
+                  {profile.location.city}, {profile.location.state}
+                </span>
               </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="flex flex-col">
-                  <FieldLabel>Location</FieldLabel>
-                  <span className="text-sm font-medium mt-0.5" style={{ color: "#FAFAFA" }}>
-                    {profile.location.city}, {profile.location.state}
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <FieldLabel>Contact</FieldLabel>
-                  <span className="text-sm font-medium mt-0.5" style={{ color: "#A1A1AA" }}>
-                    {profile.contact.email}
-                  </span>
-                </div>
+              <div className="flex flex-col">
+                <FieldLabel>Contact</FieldLabel>
+                <span className="text-sm font-medium mt-0.5 truncate" style={{ color: "#A1A1AA" }}>
+                  {profile.contact.email}
+                </span>
               </div>
-            )}
-          </SectionCard>
+            </div>
 
-          {/* ── Preferences Card ────────────────────────────────────────────── */}
-          <SectionCard className="lg:col-span-2">
+            <div
+              className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold uppercase tracking-widest"
+              style={{ color: "#00FFC2" }}
+            >
+              Edit
+            </div>
+          </GlassCard>
+
+          {/* ── Preferences Card ───────────────────────────────────────────── */}
+          <GlassCard className="lg:col-span-2" clickable onClick={() => openSheet("search-logic")}>
+            <div className="flex items-center justify-between">
+              <h3
+                className="text-[11px] font-bold uppercase tracking-widest"
+                style={{ color: "#71717A" }}
+              >
+                Search Logic
+              </h3>
+              <span
+                className="text-xs font-bold px-2.5 py-1 rounded-lg"
+                style={{
+                  background: "rgba(0,255,194,0.08)",
+                  border: "1px solid rgba(0,255,194,0.15)",
+                  color: "#00FFC2",
+                }}
+              >
+                Scout Params
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+              <div className="space-y-1">
+                <FieldLabel>Salary Range</FieldLabel>
+                <div className="flex items-end gap-1">
+                  <span className="text-2xl font-black tracking-tight" style={{ color: "#FAFAFA" }}>
+                    ₹{profile.preferences.desired_pay_inr_lpa.min}
+                  </span>
+                  <span className="text-sm font-bold pb-1" style={{ color: "#A1A1AA" }}>
+                    – {profile.preferences.desired_pay_inr_lpa.ideal} LPA
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <FieldLabel>Work Type</FieldLabel>
+                <div className="flex gap-2 flex-wrap mt-1">
+                  {profile.preferences.work_type.map((type) => (
+                    <span
+                      key={type}
+                      className="px-2 py-1 rounded-md text-xs font-bold"
+                      style={{
+                        background: "rgba(59,130,246,0.12)",
+                        border: "1px solid rgba(59,130,246,0.25)",
+                        color: "#60A5FA",
+                      }}
+                    >
+                      {type}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-1">
+                <FieldLabel>Desired Roles</FieldLabel>
+                <p className="text-sm font-medium leading-snug" style={{ color: "#A1A1AA" }}>
+                  {profile.preferences.preferred_roles.join(", ")}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <FieldLabel>Company Size</FieldLabel>
+                <p className="text-sm font-medium" style={{ color: "#A1A1AA" }}>
+                  {profile.preferences.preferred_company_size.join(", ")}
+                </p>
+              </div>
+            </div>
+          </GlassCard>
+
+          {/* ── Tech Stack Card ───────────────────────────────────────────── */}
+          <GlassCard className="lg:col-span-3" clickable onClick={() => openSheet("tech-arsenal")}>
             <div className="flex items-center justify-between mb-2">
               <h3
                 className="text-[11px] font-bold uppercase tracking-widest"
                 style={{ color: "#71717A" }}
               >
-                Job Preferences
+                Tech Arsenal
               </h3>
-              {editingSection !== "preferences" && (
-                <button
-                  onClick={() => startEdit("preferences")}
-                  className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-bold transition-all hover:opacity-80"
-                  style={{
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    color: "#A1A1AA",
-                  }}
-                >
-                  <Pencil size={11} />
-                  Edit Salary
-                </button>
-              )}
+              <span
+                className="text-xs font-bold px-2.5 py-1 rounded-lg"
+                style={{
+                  background: "rgba(168,85,247,0.08)",
+                  border: "1px solid rgba(168,85,247,0.2)",
+                  color: "#C084FC",
+                }}
+              >
+                {Object.values(profile.skills).flat().length} skills indexed
+              </span>
             </div>
 
-            {editingSection === "preferences" ? (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <FieldLabel>Min Salary (LPA)</FieldLabel>
-                  <EditInput
-                    type="number"
-                    value={draftSalaryMin}
-                    onChange={(v) => setDraftSalaryMin(Number(v))}
-                    placeholder="8"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <FieldLabel>Ideal Salary (LPA)</FieldLabel>
-                  <EditInput
-                    type="number"
-                    value={draftSalaryIdeal}
-                    onChange={(v) => setDraftSalaryIdeal(Number(v))}
-                    placeholder="14"
-                  />
-                </div>
-                <div className="col-span-2 flex gap-2 pt-1">
-                  <button
-                    onClick={saveSection}
-                    disabled={isSaving}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold"
-                    style={{ background: "#00FFC2", color: "#050505" }}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {Object.entries(profile.skills).map(([category, skills]) => (
+                <div key={category} className="space-y-2">
+                  <h4
+                    className="text-xs font-bold capitalize pb-2"
+                    style={{
+                      color: "#FAFAFA",
+                      borderBottom: "1px solid rgba(255,255,255,0.07)",
+                    }}
                   >
-                    {isSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-                    Save & Re-Validate Matches
-                  </button>
-                  <button
-                    onClick={cancelEdit}
-                    className="flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-bold"
-                    style={{ background: "rgba(255,255,255,0.06)", color: "#A1A1AA" }}
-                  >
-                    <X size={12} /> Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                <div className="space-y-1">
-                  <FieldLabel>Salary Requirement</FieldLabel>
-                  <div className="flex items-end gap-1">
-                    <span className="text-2xl font-black tracking-tight" style={{ color: "#FAFAFA" }}>
-                      ₹{profile.preferences.desired_pay_inr_lpa.min}
-                    </span>
-                    <span className="text-sm font-bold pb-1" style={{ color: "#A1A1AA" }}>
-                      – {profile.preferences.desired_pay_inr_lpa.ideal} LPA
-                    </span>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <FieldLabel>Work Type</FieldLabel>
-                  <div className="flex gap-2 flex-wrap mt-1">
-                    {profile.preferences.work_type.map((type) => (
+                    {category.replace(/_/g, " ")}
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {skills.map((skill) => (
                       <span
-                        key={type}
-                        className="px-2 py-1 rounded-md text-xs font-bold"
+                        key={skill}
+                        className="px-2 py-0.5 rounded text-[11px] font-semibold"
                         style={{
-                          background: "rgba(59,130,246,0.12)",
-                          border: "1px solid rgba(59,130,246,0.25)",
-                          color: "#60A5FA",
+                          background: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          color: "#A1A1AA",
                         }}
                       >
-                        {type}
+                        {skill}
                       </span>
                     ))}
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <FieldLabel>Desired Roles</FieldLabel>
-                  <p className="text-sm font-medium leading-snug" style={{ color: "#A1A1AA" }}>
-                    {profile.preferences.preferred_roles.join(", ")}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <FieldLabel>Company Size</FieldLabel>
-                  <p className="text-sm font-medium" style={{ color: "#A1A1AA" }}>
-                    {profile.preferences.preferred_company_size.join(", ")}
-                  </p>
-                </div>
-              </div>
-            )}
-          </SectionCard>
-
-          {/* ── Tech Stack Card ──────────────────────────────────────────────── */}
-          <SectionCard className="lg:col-span-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3
-                className="text-[11px] font-bold uppercase tracking-widest"
-                style={{ color: "#71717A" }}
-              >
-                Tech Stack &amp; Skills
-              </h3>
-              {editingSection !== "skills" && (
-                <button
-                  onClick={() => startEdit("skills")}
-                  className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-bold transition-all hover:opacity-80"
-                  style={{
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    color: "#A1A1AA",
-                  }}
-                >
-                  <Pencil size={11} />
-                  Edit Stack
-                </button>
-              )}
+              ))}
             </div>
+          </GlassCard>
 
-            {editingSection === "skills" ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Object.entries(draftSkills).map(([category, csv]) => (
-                    <div key={category} className="space-y-1">
-                      <FieldLabel>{category.replace("_", " ")}</FieldLabel>
-                      <textarea
-                        value={csv}
-                        onChange={(e) =>
-                          setDraftSkills((prev) => ({
-                            ...prev,
-                            [category]: e.target.value,
-                          }))
-                        }
-                        rows={3}
-                        className="w-full resize-none rounded-lg px-3 py-2 text-xs font-medium focus:outline-none focus:ring-2 transition-all"
-                        style={{
-                          background: "#1A1A1A",
-                          border: "1px solid rgba(255,255,255,0.12)",
-                          color: "#A1A1AA",
-                        }}
-                        placeholder="comma-separated skills"
-                      />
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={saveSection}
-                    disabled={isSaving}
-                    className="flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-bold"
-                    style={{ background: "#00FFC2", color: "#050505" }}
-                  >
-                    {isSaving ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
-                    Save & Re-Validate Matches
-                  </button>
-                  <button
-                    onClick={cancelEdit}
-                    className="flex items-center gap-1 rounded-lg px-3 py-2 text-xs font-bold"
-                    style={{ background: "rgba(255,255,255,0.06)", color: "#A1A1AA" }}
-                  >
-                    <X size={12} /> Cancel
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {Object.entries(profile.skills).map(([category, skills]) => (
-                  <div key={category} className="space-y-2">
-                    <h4
-                      className="text-xs font-bold capitalize pb-2"
-                      style={{
-                        color: "#FAFAFA",
-                        borderBottom: "1px solid rgba(255,255,255,0.07)",
-                      }}
-                    >
-                      {category.replace("_", " ")}
-                    </h4>
-                    <div className="flex flex-wrap gap-1.5">
-                      {skills.map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-2 py-0.5 rounded text-[11px] font-semibold"
-                          style={{
-                            background: "rgba(255,255,255,0.06)",
-                            border: "1px solid rgba(255,255,255,0.1)",
-                            color: "#A1A1AA",
-                          }}
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </SectionCard>
-
-          {/* ── Experience Card ──────────────────────────────────────────────── */}
-          <SectionCard className="lg:col-span-3">
+          {/* ── Experience Card ───────────────────────────────────────────── */}
+          <GlassCard className="lg:col-span-3">
             <h3
               className="text-[11px] font-bold uppercase tracking-widest mb-2"
               style={{ color: "#71717A" }}
@@ -575,9 +649,7 @@ export default function ProfilePage() {
                 <div key={idx} className="relative">
                   <div
                     className="absolute -left-[23px] top-1.5 h-3 w-3 rounded-full ring-4 ring-[#121212]"
-                    style={{
-                      background: "#00FFC2",
-                    }}
+                    style={{ background: "#00FFC2" }}
                   />
                   <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-2">
                     <h4 className="text-base font-bold" style={{ color: "#FAFAFA" }}>
@@ -611,10 +683,315 @@ export default function ProfilePage() {
                 </div>
               ))}
             </div>
-          </SectionCard>
+          </GlassCard>
 
         </section>
       </div>
+
+      {/* ── Scout Config Hub Sheet ────────────────────────────────────────────── */}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent
+          side="right"
+          showCloseButton={false}
+          className="!w-full sm:!max-w-lg flex flex-col !p-0 !gap-0 !border-l overflow-hidden"
+          style={{
+            background: "#080808",
+            borderLeft: "1px solid rgba(0,255,194,0.12)",
+            boxShadow: "-20px 0 60px rgba(0,0,0,0.6), -1px 0 0 rgba(0,255,194,0.05)",
+          }}
+        >
+          {/* Sheet Header */}
+          <div
+            className="shrink-0 px-6 pt-6 pb-4 space-y-4"
+            style={{
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              background: "rgba(0,255,194,0.02)",
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className="h-8 w-8 rounded-lg flex items-center justify-center"
+                  style={{
+                    background: "rgba(0,255,194,0.1)",
+                    border: "1px solid rgba(0,255,194,0.2)",
+                  }}
+                >
+                  <Zap size={15} style={{ color: "#00FFC2" }} />
+                </div>
+                <SheetTitle
+                  className="!text-base !font-black !tracking-tight"
+                  style={{ color: "#FAFAFA" }}
+                >
+                  Scout Config Hub
+                </SheetTitle>
+              </div>
+              <button
+                onClick={() => setSheetOpen(false)}
+                className="h-8 w-8 rounded-lg flex items-center justify-center transition-all hover:opacity-70"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <X size={14} style={{ color: "#71717A" }} />
+              </button>
+            </div>
+
+            <SheetDescription className="!text-xs !text-[#71717A] !m-0">
+              Update your parameters — Scout uses these to rank every match in real-time.
+            </SheetDescription>
+
+            {/* Tab Bar */}
+            <div className="flex gap-1.5 pt-1">
+              {(
+                [
+                  { id: "identity", label: "Identity" },
+                  { id: "search-logic", label: "Search Logic" },
+                  { id: "tech-arsenal", label: "Tech Arsenal" },
+                ] as { id: TabId; label: string }[]
+              ).map((tab) => (
+                <TabButton
+                  key={tab.id}
+                  active={activeTab === tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  {tab.label}
+                </TabButton>
+              ))}
+            </div>
+          </div>
+
+          {/* Tab Content — scrollable body */}
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+
+            {/* ── Identity Tab ── */}
+            {activeTab === "identity" && (
+              <div className="space-y-5">
+                <div
+                  className="rounded-xl p-4 space-y-4"
+                  style={{
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="h-12 w-12 shrink-0 rounded-full flex items-center justify-center text-xl font-black"
+                      style={{
+                        background: "rgba(0,255,194,0.1)",
+                        border: "1px solid rgba(0,255,194,0.25)",
+                        color: "#00FFC2",
+                      }}
+                    >
+                      {profile.name.split(" ").map((n) => n[0]).join("")}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold" style={{ color: "#FAFAFA" }}>
+                        {profile.name}
+                      </p>
+                      <p className="text-xs" style={{ color: "#71717A" }}>
+                        {profile.degree} · Class of {profile.graduation_year}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <SheetInput
+                  label="City"
+                  value={draftCity}
+                  onChange={setDraftCity}
+                  placeholder="e.g. Bengaluru"
+                />
+                <SheetInput
+                  label="State"
+                  value={draftState}
+                  onChange={setDraftState}
+                  placeholder="e.g. Karnataka"
+                />
+
+                <div
+                  className="rounded-xl p-4 space-y-2"
+                  style={{
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                  }}
+                >
+                  <FieldLabel>Read-only fields</FieldLabel>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <FieldLabel>Email</FieldLabel>
+                      <p className="text-xs mt-0.5 font-medium" style={{ color: "#A1A1AA" }}>
+                        {profile.contact.email}
+                      </p>
+                    </div>
+                    <div>
+                      <FieldLabel>Phone</FieldLabel>
+                      <p className="text-xs mt-0.5 font-medium" style={{ color: "#A1A1AA" }}>
+                        {profile.contact.phone}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Search Logic Tab ── */}
+            {activeTab === "search-logic" && (
+              <div className="space-y-5">
+                <div
+                  className="rounded-xl p-4 space-y-1"
+                  style={{
+                    background: "rgba(0,255,194,0.03)",
+                    border: "1px solid rgba(0,255,194,0.1)",
+                  }}
+                >
+                  <p className="text-[11px] font-bold" style={{ color: "#00FFC2" }}>
+                    💡 Scout Tip
+                  </p>
+                  <p className="text-xs leading-relaxed" style={{ color: "#71717A" }}>
+                    Jobs below your minimum salary are automatically filtered out. Ideal salary
+                    influences your match rank.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <SheetInput
+                    label="Min Salary (LPA)"
+                    type="number"
+                    value={draftSalaryMin}
+                    onChange={(v) => setDraftSalaryMin(Number(v))}
+                    placeholder="8"
+                  />
+                  <SheetInput
+                    label="Ideal Salary (LPA)"
+                    type="number"
+                    value={draftSalaryIdeal}
+                    onChange={(v) => setDraftSalaryIdeal(Number(v))}
+                    placeholder="14"
+                  />
+                </div>
+
+                <div
+                  className="rounded-xl p-4 space-y-3"
+                  style={{
+                    background: "rgba(255,255,255,0.02)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                  }}
+                >
+                  <FieldLabel>Read-only preferences (from me.json)</FieldLabel>
+                  <div className="space-y-2">
+                    <div>
+                      <FieldLabel>Preferred Roles</FieldLabel>
+                      <p className="text-xs mt-0.5 font-medium" style={{ color: "#A1A1AA" }}>
+                        {profile.preferences.preferred_roles.join(" · ")}
+                      </p>
+                    </div>
+                    <div>
+                      <FieldLabel>Work Type</FieldLabel>
+                      <div className="flex gap-1.5 flex-wrap mt-1">
+                        {profile.preferences.work_type.map((t) => (
+                          <span
+                            key={t}
+                            className="px-2 py-0.5 rounded text-[10px] font-bold"
+                            style={{
+                              background: "rgba(59,130,246,0.1)",
+                              border: "1px solid rgba(59,130,246,0.2)",
+                              color: "#60A5FA",
+                            }}
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <FieldLabel>Company Size</FieldLabel>
+                      <p className="text-xs mt-0.5 font-medium" style={{ color: "#A1A1AA" }}>
+                        {profile.preferences.preferred_company_size.join(", ")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Tech Arsenal Tab ── */}
+            {activeTab === "tech-arsenal" && (
+              <div className="space-y-3">
+                <div
+                  className="rounded-xl p-4 space-y-1"
+                  style={{
+                    background: "rgba(168,85,247,0.04)",
+                    border: "1px solid rgba(168,85,247,0.15)",
+                  }}
+                >
+                  <p className="text-[11px] font-bold" style={{ color: "#C084FC" }}>
+                    🎯 Tech Arsenal
+                  </p>
+                  <p className="text-xs leading-relaxed" style={{ color: "#71717A" }}>
+                    Click <span style={{ color: "#00FFC2" }}>✕</span> on a badge to remove it.
+                    Type a skill and press <kbd
+                      className="px-1 py-0.5 rounded text-[9px] font-bold"
+                      style={{ background: "rgba(255,255,255,0.06)", color: "#A1A1AA" }}
+                    >Enter</kbd> or{" "}
+                    <kbd
+                      className="px-1 py-0.5 rounded text-[9px] font-bold"
+                      style={{ background: "rgba(255,255,255,0.06)", color: "#A1A1AA" }}
+                    >,</kbd>{" "}
+                    to add. Paste comma-separated to bulk add.
+                  </p>
+                </div>
+
+                {Object.entries(draftSkills).map(([category, skills]) => (
+                  <SkillCategoryEditor
+                    key={category}
+                    category={category}
+                    skills={skills}
+                    onChange={(newSkills) => updateDraftSkillCategory(category, newSkills)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── Fixed Footer: Update Scout Logic ── */}
+          <div
+            className="shrink-0 px-6 py-5 space-y-3"
+            style={{
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+              background: "rgba(0,0,0,0.5)",
+              backdropFilter: "blur(12px)",
+            }}
+          >
+            <button
+              onClick={handleUpdateBrain}
+              disabled={isSaving}
+              className="w-full flex items-center justify-center gap-2.5 rounded-xl py-3.5 text-sm font-black tracking-wide transition-all duration-200 hover:opacity-90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                background: "linear-gradient(135deg, #00FFC2 0%, #00D4A0 100%)",
+                color: "#050505",
+                boxShadow: "0 4px 20px rgba(0,255,194,0.25)",
+              }}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Syncing with Scout…
+                </>
+              ) : (
+                <>
+                  <Zap size={16} />
+                  Update Scout Logic
+                </>
+              )}
+            </button>
+            <p className="text-center text-[10px] font-medium" style={{ color: "#3F3F46" }}>
+              All active job matches will be re-evaluated after update.
+            </p>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

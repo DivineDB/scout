@@ -3,8 +3,13 @@
 Designed to cut through the noise, distil signal, and target high-pay remote roles seamlessly.
 
 ## Current Progress & Status
-- **Status**: Mission 6.9.5 — Final Logic Bridge & Theme Lockdown — Successfully Executed.
+- **Status**: Mission 6.10 — Scout Config Hub — Successfully Executed.
 - **Features Implemented**: 
+  - **Scout Config Hub** *(6.10)*: Centralized slide-over sheet triggered by clicking anywhere on identity, preferences, or tech stack cards. Replaced scattered edit icons.
+  - **Unified Config Form** *(6.10)*: Integrated multi-tab form (Identity, Search Logic, Tech Arsenal) inside the sheet for streamlined profile updates.
+  - **SkillCategoryEditor** *(6.10)*: Responsive multi-select interface for the Tech Arsenal category, allowing real-time add/remove of skill badges with search and comma-separated batch entry.
+  - **Optimistic Sync Engine** *(6.10)*: Pinned "Update Scout Logic" button that performs optimistic UI updates with Sonner feedback and automatic `router.refresh()` on success.
+  - **Obsidian Mint Vibe (Sheet)** *(6.10)*: Deep black background, glass-effect borders, and mint accents applied consistently within the configuration hub.
   - **Obsidian Contrast Overhaul**: Deep black `#050505` background with `#121212` cards and Zinc body text.
   - **Profile Command Center**: Interactive state-managed profile editor (Salary, Location, Tech Stack) with Supabase persistence and match re-validation triggers.
   - **Hook Persistence**: AI-generated outreach hooks are now stored in Supabase and reused.
