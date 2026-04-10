@@ -15,39 +15,9 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 
-// ── Types ────────────────────────────────────────────────────────────────────
-interface ProfileOverride {
-  city?: string;
-  state?: string;
-  salary_min?: number;
-  salary_ideal?: number;
-  skills?: Record<string, string[]>;
-  contact_email?: string;
-  contact_phone?: string;
-}
+import { mergeProfile, type ProfileOverride } from "@/lib/profile";
 
 type TabId = "identity" | "search-logic" | "tech-arsenal";
-
-// ── Helper ───────────────────────────────────────────────────────────────────
-function mergeProfile(base: Persona, override: ProfileOverride | null): Persona {
-  if (!override) return base;
-  return {
-    ...base,
-    location: {
-      ...base.location,
-      city: override.city ?? base.location.city,
-      state: override.state ?? base.location.state,
-    },
-    preferences: {
-      ...base.preferences,
-      desired_pay_inr_lpa: {
-        min: override.salary_min ?? base.preferences.desired_pay_inr_lpa.min,
-        ideal: override.salary_ideal ?? base.preferences.desired_pay_inr_lpa.ideal,
-      },
-    },
-    skills: (override.skills as Persona["skills"]) ?? base.skills,
-  };
-}
 
 // ── Ambient Glass Card ────────────────────────────────────────────────────────
 function GlassCard({

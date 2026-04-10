@@ -15,6 +15,7 @@ import { formatSalary } from "@/lib/format-salary";
 import { supabase } from "@/lib/supabase";
 import meData from "@/data/me.json";
 import { toast } from "sonner";
+import { mergeProfile } from "@/lib/profile";
 
 // Dynamically import PDF components — client only, no SSR
 const PDFViewer = dynamic(
@@ -85,7 +86,7 @@ export default function SeriousModePage({
   }
 
   // ── Trigger AI distillation for pending stubs ────────────────────────────
-  async function triggerDistillation(jobId: string) {
+  async function triggerDistillation(jobId: string, currentPersona: Persona) {
     setIsDistilling(true);
     toast.loading("AI is analysing this job — hang tight…", { id: "distill" });
     try {
@@ -103,9 +104,9 @@ export default function SeriousModePage({
       if (fresh) {
         const fetched = fresh as JobPost;
         setJob(fetched);
-        generateHook(fetched);
-        if (fetched.match_score < 70) analyzeGaps(fetched);
-        const morphed = await morphResume(persona, fetched);
+        generateHook(fetched, currentPersona);
+        if (fetched.match_score < 70) analyzeGaps(fetched, currentPersona);
+        const morphed = await morphResume(currentPersona, fetched);
         setMorphedProfile(morphed);
       }
     } catch (err: any) {
@@ -116,13 +117,13 @@ export default function SeriousModePage({
   }
 
   // ── Generate hook from API ──────────────────────────────────────────────────
-  async function generateHook(jobData: JobPost) {
+  async function generateHook(jobData: JobPost, currentPersona: Persona) {
     setHookGenerating(true);
     try {
       const res = await fetch("/api/job/generate-hook", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ job: jobData, persona }),
+        body: JSON.stringify({ job: jobData, persona: currentPersona }),
       });
       const data = await res.json();
       if (data.hook) {
@@ -137,13 +138,13 @@ export default function SeriousModePage({
   }
 
   // ── Analyze gaps for low match scores ────────────────────────────────────
-  async function analyzeGaps(jobData: JobPost) {
+  async function analyzeGaps(jobData: JobPost, currentPersona: Persona) {
     setGapsLoading(true);
     try {
       const res = await fetch("/api/job/analyze-gaps", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ job: jobData, persona }),
+        body: JSON.stringify({ job: jobData, persona: currentPersona }),
       });
       const data = await res.json();
       if (data.gaps && Array.isArray(data.gaps)) {
@@ -173,6 +174,8 @@ export default function SeriousModePage({
     async function fetchJobAndAssets() {
       try {
         setIsLoading(true);
+        
+        // 1. Fetch Job
         const { data, error } = await supabase
           .from("jobs")
           .select("*")
@@ -183,9 +186,26 @@ export default function SeriousModePage({
         const fetched = data as JobPost;
         setJob(fetched);
 
+        // 2. Fetch User Profile to override meData overrides
+        let activePersona = persona;
+        try {
+          const authRes = await supabase.auth.getSession();
+          const token = authRes.data.session?.access_token;
+          const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
+          const profileRes = await fetch("/api/profile/update", { headers });
+          if (profileRes.ok) {
+            const result = await profileRes.json();
+            if (result.profile) {
+              activePersona = mergeProfile(persona, result.profile);
+            }
+          }
+        } catch (e) {
+          console.warn("Could not fetch profile overrides", e);
+        }
+
         // If this is an undistilled stub, trigger re-distillation immediately
         if ((fetched as any).distillation_pending) {
-          triggerDistillation(fetched.id);
+          triggerDistillation(fetched.id, activePersona);
           return; // triggerDistillation will reload job + run the rest
         }
 
@@ -194,7 +214,7 @@ export default function SeriousModePage({
         if (storedHook && storedHook.trim().length > 0) {
           setHookText(storedHook);
         } else {
-          generateHook(fetched);
+          generateHook(fetched, activePersona);
         }
 
         // Gap Analysis: trigger if match_score < 70 and missing_skills is empty/short
@@ -202,11 +222,11 @@ export default function SeriousModePage({
           fetched.match_score < 70 &&
           (!fetched.missing_skills || fetched.missing_skills.length < 3)
         ) {
-          analyzeGaps(fetched);
+          analyzeGaps(fetched, activePersona);
         }
 
         // Morph Resume
-        const morphed = await morphResume(persona, fetched);
+        const morphed = await morphResume(activePersona, fetched);
         setMorphedProfile(morphed);
       } catch (err) {
         console.error("Error fetching job:", err);
