@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Always use Service Role Key — bypasses RLS and guarantees write access
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST(req: Request) {
@@ -22,11 +23,14 @@ export async function POST(req: Request) {
 
     if (error) {
       console.error("[Job Update] Supabase Error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: error.message, code: error.code, details: error.details }, { status: 500 });
     }
 
     if (!data) {
-      return NextResponse.json({ error: "Job does not exist in the database. (Mock jobs cannot be promoted)." }, { status: 404 });
+      return NextResponse.json({
+        error: `No job found with id="${jobId}". The job does not exist in the database — confirm the UUID is a real Supabase row and not a local mock.`,
+        hint: "Check that the job was scouted via the Scout button (not loaded from mock_jobs.json).",
+      }, { status: 404 });
     }
 
     return NextResponse.json({ success: true, job: data });
@@ -35,3 +39,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message || "Failed to update job" }, { status: 500 });
   }
 }
+

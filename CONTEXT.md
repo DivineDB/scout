@@ -3,16 +3,16 @@
 Designed to cut through the noise, distil signal, and target high-pay remote roles seamlessly.
 
 ## Current Progress & Status
-- **Status**: Mission 6.12 — Scout Total Restoration — COMPLETE.
+- **Status**: Mission 6.13 — Emergency Model & ID Sync — COMPLETE.
 - **Features Implemented**: 
-  - **Gemini 1.5 Pro Model Swap** *(6.12)*: Globally upgraded from `gemini-3.0-flash` to `gemini-1.5-pro` across all critical pipelines (Distillation, Hook Generation, Gap Analysis) to bypass rate limits and improve intelligence.
-  - **Service Role Persistence Hardening** *(6.12)*: Locked `api/profile/update` and job status updates to use `SUPABASE_SERVICE_ROLE_KEY` exclusively. Removed legacy `profile_key` (non-existent in current schema) to fix silent save failures.
-  - **Obsidian Sheet UI Standarization** *(6.12)*: Forced `bg-[#050505]` and `border-white/10` on all slide-over sheets (Profile Hub and Job Insight). Added dedicated "Promoting..." and "Syncing..." loading states with spinners.
-  - **UUID Safety Guard** *(6.12)*: Implemented a critical console guard in `JobCard` to flag any job missing a valid database UUID—preventing "Mock" error confusion during promotion.
-  - **Auth-Aware Persistence** *(6.11)*: Refactored `api/profile/update` to target `id` PK (linked to `auth.uid()`) using `@supabase/ssr` server-side context.
+  - **Gemini 1.5 Flash Latest Swap** *(6.13)*: Standardsized on `gemini-1.5-flash-latest` across all pipelines to resolve model name resolution errors and optimize for low-latency v1beta calls.
+  - **Stub-First Scouting** *(6.13)*: Rewrote the scouting pipeline to save a "Raw Stub" to Supabase immediately after scraping. This guarantees a native UUID for the job even if AI distillation fails or is delayed.
+  - **Match Validation Softening** *(6.13)*: Changed `match_explanation` from a hard validation throw to a soft fallback fill, preventing AI extraction errors from crashing the entire save pipeline.
+  - **Technical Error Surfacing** *(6.13)*: Updated the promotion UI to show real technical errors `[Status: 404]` instead of vague legacy messages when rows are missing.
+  - **Gemini 1.5 Pro Model Swap** *(6.12)*: Globally upgraded from `gemini-3.0-flash` to `gemini-1.5-pro` (and later refined in 6.13).
 
 ## Architecture
-- **Tech Stack**: Next.js 15, Supabase (with service role key for API routes), Gemini 3.0 Flash, Firecrawl v4, @react-pdf/renderer.
+- **Tech Stack**: Next.js 15, Supabase (with service role key for API routes), Gemini 1.5 Flash Latest, Firecrawl v4, @react-pdf/renderer.
 - **Design System**: 'Obsidian Mint' — **always dark-first**.
   - **Palette**: Deep Black (`#050505`) / Cards (`#121212`) / Borders (`rgba(255,255,255,0.08)`).
   - **Typography**: Headers in Pure White (`#FAFAFA`), Body in Zinc-400 (`#A1A1AA`).

@@ -81,8 +81,8 @@ export function JobInsightSheet({
       const data = await res.json();
 
       if (!res.ok) {
-        // Surface the exact Supabase error, never hide it
-        toast.error(`Promote failed: ${data.error || "Unknown error"}`, { id: toastId });
+        // Surface the real technical HTTP error so we can see the bottleneck
+        toast.error(`[Status: ${res.status}] ${res.statusText} - ${data.error || "Unknown error"}`, { id: toastId });
         return;
       }
 

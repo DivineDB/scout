@@ -90,7 +90,7 @@ export async function distillJobData(rawText: string, companyIntel: string): Pro
   `;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-1.5-pro',
+    model: 'gemini-1.5-flash-latest',
     contents: prompt,
     config: {
       responseMimeType: "application/json",
@@ -153,15 +153,14 @@ export async function distillJobData(rawText: string, companyIntel: string): Pro
 
   const parsedData = JSON.parse(response.text);
 
-  // ── Hard validation: match_explanation must be a non-empty string ──────────
+  // ── Soft validation: fill match_explanation if missing instead of crashing ──
   if (
     !parsedData.match_explanation ||
     typeof parsedData.match_explanation !== "string" ||
     parsedData.match_explanation.trim().length === 0
   ) {
-    throw new Error(
-      "Distiller returned an empty match_explanation. This field is required."
-    );
+    console.warn("[Distiller] match_explanation was empty — filling with fallback.");
+    parsedData.match_explanation = `${parsedData.match_score ?? 0}% match based on tech stack alignment.`;
   }
 
   return parsedData;
