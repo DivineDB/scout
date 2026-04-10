@@ -41,7 +41,7 @@ export async function morphResume(persona: Persona, job: JobPost): Promise<Morph
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-3.1-pro-preview",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
