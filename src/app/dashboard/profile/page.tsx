@@ -6,7 +6,7 @@ import { Persona } from "@/types/persona";
 import { Loader2, X, Check, Zap, ChevronRight, Settings2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { createClient as createBrowserClient } from "@/utils/supabase/client";
+import { supabase } from "@/lib/supabase";
 import {
   Sheet,
   SheetContent,
@@ -314,11 +314,10 @@ export default function ProfilePage() {
   const [draftEmail, setDraftEmail] = useState("");
   const [draftPhone, setDraftPhone] = useState("");
 
-  /** Get a fresh Bearer token from the browser Supabase client */
+  /** Get a fresh Bearer token from the shared anon-key Supabase client */
   const getAuthHeader = async (): Promise<Record<string, string>> => {
     try {
-      const browserClient = createBrowserClient();
-      const { data } = await browserClient.auth.getSession();
+      const { data } = await supabase.auth.getSession();
       const token = data?.session?.access_token;
       if (token) return { Authorization: `Bearer ${token}` };
     } catch {}

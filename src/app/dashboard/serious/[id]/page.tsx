@@ -60,6 +60,7 @@ export default function SeriousModePage({
 
   const [job, setJob] = useState<JobPost | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDistilling, setIsDistilling] = useState(false);
   const [hookText, setHookText] = useState("");
   const [hookGenerating, setHookGenerating] = useState(false);
   const [hookCopied, setHookCopied] = useState(false);
@@ -73,12 +74,44 @@ export default function SeriousModePage({
       const res = await fetch("/api/job/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        // uses the correct column name in the DB
         body: JSON.stringify({ jobId, updates: { generated_hook: hook } }),
       });
       const data = await res.json();
       if (!res.ok) console.warn("Failed to persist hook:", data.error);
     } catch (err) {
       console.warn("Hook persist error:", err);
+    }
+  }
+
+  // ── Trigger AI distillation for pending stubs ────────────────────────────
+  async function triggerDistillation(jobId: string) {
+    setIsDistilling(true);
+    toast.loading("AI is analysing this job — hang tight…", { id: "distill" });
+    try {
+      const res = await fetch("/api/scout/distill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Distillation failed");
+
+      // Reload the page with freshly distilled data
+      toast.success("Job distilled! Loading fresh data…", { id: "distill" });
+      const { data: fresh } = await supabase.from("jobs").select("*").eq("id", jobId).single();
+      if (fresh) {
+        const fetched = fresh as JobPost;
+        setJob(fetched);
+        generateHook(fetched);
+        if (fetched.match_score < 70) analyzeGaps(fetched);
+        const morphed = await morphResume(persona, fetched);
+        setMorphedProfile(morphed);
+      }
+    } catch (err: any) {
+      toast.error(`Distillation failed: ${err.message}`, { id: "distill" });
+    } finally {
+      setIsDistilling(false);
     }
   }
 
@@ -150,6 +183,12 @@ export default function SeriousModePage({
         const fetched = data as JobPost;
         setJob(fetched);
 
+        // If this is an undistilled stub, trigger re-distillation immediately
+        if ((fetched as any).distillation_pending) {
+          triggerDistillation(fetched.id);
+          return; // triggerDistillation will reload job + run the rest
+        }
+
         // Hook: use persisted value if exists, otherwise generate
         const storedHook = (fetched as any).generated_hook;
         if (storedHook && storedHook.trim().length > 0) {
@@ -179,10 +218,13 @@ export default function SeriousModePage({
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Loading state ─────────────────────────────────────────────────────────
-  if (isLoading)
+  if (isLoading || isDistilling)
     return (
-      <div className="flex h-screen w-full items-center justify-center" style={{ background: "#050505" }}>
+      <div className="flex h-screen w-full flex-col items-center justify-center gap-3" style={{ background: "#050505" }}>
         <Loader2 className="h-8 w-8 animate-spin" style={{ color: "#00FFC2" }} />
+        <p className="text-sm font-semibold" style={{ color: "#71717A" }}>
+          {isDistilling ? "AI is distilling this job…" : "Loading workspace…"}
+        </p>
       </div>
     );
 

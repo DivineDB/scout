@@ -47,8 +47,11 @@ export function JobInsightSheet({
 }) {
   const router = useRouter();
   const [isPromoting, setIsPromoting] = useState(false);
+  const [isRedistilling, setIsRedistilling] = useState(false);
 
   if (!job) return null;
+
+  const isPending = !!(job as any).distillation_pending;
 
   const handleApply = () => {
     const quickIntro = `Hi! I'm an engineer passionate about building great products. I scored a ${job.match_score}% match for the ${job.role} position at ${job.company.name} and would love to chat.`;
@@ -57,6 +60,27 @@ export function JobInsightSheet({
       description: "Paste it directly into your application.",
     });
     window.open(job.apply_url, "_blank");
+  };
+
+  const handleRedistill = async () => {
+    setIsRedistilling(true);
+    const toastId = toast.loading("Re-distilling with AI…");
+    try {
+      const res = await fetch("/api/scout/distill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: job.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Distillation failed");
+      toast.success("Job distilled! Refreshing…", { id: toastId });
+      router.refresh();
+      onClose();
+    } catch (err: any) {
+      toast.error(`Distillation failed: ${err.message}`, { id: toastId });
+    } finally {
+      setIsRedistilling(false);
+    }
   };
 
   const promoteJobToSerious = async () => {
@@ -126,6 +150,46 @@ export function JobInsightSheet({
 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
+
+          {/* Pending distillation banner */}
+          {isPending && (
+            <div
+              className="rounded-lg p-4 flex flex-col gap-3"
+              style={{
+                background: "rgba(251,191,36,0.06)",
+                border: "1px solid rgba(251,191,36,0.25)",
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span style={{ color: "#FBBF24" }}>⏳</span>
+                <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#FBBF24" }}>
+                  Pending AI Distillation
+                </p>
+              </div>
+              <p className="text-xs leading-relaxed font-medium" style={{ color: "#A1A1AA" }}>
+                The AI hasn&apos;t analysed this job yet. Hit Re-distill to extract the full role details, match score, and skill gaps now.
+              </p>
+              <button
+                onClick={handleRedistill}
+                disabled={isRedistilling}
+                className="flex items-center justify-center gap-2 rounded-lg py-2 text-xs font-bold transition-all hover:opacity-90 disabled:opacity-50"
+                style={{
+                  background: "rgba(251,191,36,0.12)",
+                  border: "1px solid rgba(251,191,36,0.3)",
+                  color: "#FBBF24",
+                }}
+              >
+                {isRedistilling ? (
+                  <><Loader2 size={12} className="animate-spin" /> Distilling…</>
+                ) : (
+                  "✨ Re-distill with AI"
+                )}
+              </button>
+            </div>
+          )}
+
+          {!isPending && (
+            <>
           {/* AI Distilled Summary */}
           <section>
             <SectionLabel>AI-Distilled Insight</SectionLabel>
@@ -168,6 +232,8 @@ export function JobInsightSheet({
               ))}
             </ul>
           </section>
+            </>
+          )}
         </div>
 
         {/* Footer */}
