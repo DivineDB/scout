@@ -4,7 +4,9 @@ import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+// Always use the Service Role Key — guarantees the upsert bypasses RLS even
+// if the session cookie is missing or stale.
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey);
 
 export interface ProfileUpdate {
@@ -27,14 +29,14 @@ export async function POST(req: Request) {
 
     const body: ProfileUpdate = await req.json();
 
+    // ── Payload matches user_profile schema exactly (no profile_key) ──────────
     const payload = {
       id: user.id,
-      profile_key: "main",
-      city: body.city,
-      state: body.state,
-      salary_min: body.salary_min,
-      salary_ideal: body.salary_ideal,
-      skills: body.skills,
+      city: body.city ?? null,
+      state: body.state ?? null,
+      salary_min: body.salary_min ?? null,
+      salary_ideal: body.salary_ideal ?? null,
+      skills: body.skills ?? null,
       updated_at: new Date().toISOString(),
     };
 

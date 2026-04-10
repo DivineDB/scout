@@ -3,28 +3,13 @@
 Designed to cut through the noise, distil signal, and target high-pay remote roles seamlessly.
 
 ## Current Progress & Status
-- **Status**: Mission 6.11 — Persistence & Model Swap — Successfully Executed.
+- **Status**: Mission 6.12 — Scout Total Restoration — COMPLETE.
 - **Features Implemented**: 
-  - **Gemini 3.0 Model Swap** *(6.11)*: Standardized on `gemini-3.0-flash` across all AI pipelines (Scouting, Morphing, Gap Analysis) for better throughput and lower latency.
-  - **Auth-Aware Persistence** *(6.11)*: Refactored `api/profile/update` to target `id` PK (linked to `auth.uid()`) using `@supabase/ssr` server-side context, resolving the `profile_key` mismatch.
-  - **Toast ID Resolution** *(6.11)*: Fixed the Sonner feedback loop in Profile Hub by correctly assigning and settling a `toastId` for "Syncing..." → "Success/Error" transitions.
-  - **Tech Arsenal UI Polish** *(6.11)*: Hard-coded `#121212` backgrounds and subtle borders into the Tech Arsenal inputs to eliminate light-mode flickering.
-  - **Scout Config Hub** *(6.10)*: Centralized slide-over sheet triggered by clicking anywhere on identity, preferences, or tech stack cards. Replaced scattered edit icons.
-  - **Unified Config Form** *(6.10)*: Integrated multi-tab form (Identity, Search Logic, Tech Arsenal) inside the sheet for streamlined profile updates.
-  - **SkillCategoryEditor** *(6.10)*: Responsive multi-select interface for the Tech Arsenal category, allowing real-time add/remove of skill badges with search and comma-separated batch entry.
-  - **Optimistic Sync Engine** *(6.10)*: Pinned "Update Scout Logic" button that performs optimistic UI updates with Sonner feedback and automatic `router.refresh()` on success.
-  - **Obsidian Mint Vibe (Sheet)** *(6.10)*: Deep black background, glass-effect borders, and mint accents applied consistently within the configuration hub.
-  - **Obsidian Contrast Overhaul**: Deep black `#050505` background with `#121212` cards and Zinc body text.
-  - **Profile Command Center**: Interactive state-managed profile editor (Salary, Location, Tech Stack) with Supabase persistence and match re-validation triggers.
-  - **Hook Persistence**: AI-generated outreach hooks are now stored in Supabase and reused.
-  - **AI Gap Analysis**: Automated 3+ point gap identification for matches < 70%.
-  - **Data Integrity**: Hard validation on match explanations and sidebar top padding fix.
-  - **Profile Persistence Update** *(6.9.5)*: `api/profile/update` uses strict upsert payload injection and returns stringified Supabase errors on failure.
-  - **RLS Bypass Architecture** *(6.9.5)*: Client-side writes failed due to Supabase RLS policies. Migrated all Supabase `.update()` calls (Promoting to Serious, Hook Saving) to Server-Side API routes (`/api/job/update`) using `SUPABASE_SERVICE_ROLE_KEY` to permanently bypass auth blocks.
-  - **Profile UI Refresh** *(6.9.5)*: Call `router.refresh()` in Profile page component after successfully tracking the API request. 
-  - **Status Update Guard** *(6.9.5)*: Ensured all status updates refer strictly to the `id` UUID mapped column via the new `/update` API.
-  - **Obsidian Theme Lockdown V2** *(6.9.5)*: Enforced `<html style="background-color: #050505">` and added `forcedTheme="dark"` to `next-themes` to kill local storage light-mode ghosting. Removed lingering `slate-700` colors in `JobInsightSheet`.
-  - **Data Hydration** *(6.9.5)*: `serious/[id]/page.tsx` pulls `generated_hook` strictly from DB mapping state to avoid re-generating hooks repeatedly per visit.
+  - **Gemini 1.5 Pro Model Swap** *(6.12)*: Globally upgraded from `gemini-3.0-flash` to `gemini-1.5-pro` across all critical pipelines (Distillation, Hook Generation, Gap Analysis) to bypass rate limits and improve intelligence.
+  - **Service Role Persistence Hardening** *(6.12)*: Locked `api/profile/update` and job status updates to use `SUPABASE_SERVICE_ROLE_KEY` exclusively. Removed legacy `profile_key` (non-existent in current schema) to fix silent save failures.
+  - **Obsidian Sheet UI Standarization** *(6.12)*: Forced `bg-[#050505]` and `border-white/10` on all slide-over sheets (Profile Hub and Job Insight). Added dedicated "Promoting..." and "Syncing..." loading states with spinners.
+  - **UUID Safety Guard** *(6.12)*: Implemented a critical console guard in `JobCard` to flag any job missing a valid database UUID—preventing "Mock" error confusion during promotion.
+  - **Auth-Aware Persistence** *(6.11)*: Refactored `api/profile/update` to target `id` PK (linked to `auth.uid()`) using `@supabase/ssr` server-side context.
 
 ## Architecture
 - **Tech Stack**: Next.js 15, Supabase (with service role key for API routes), Gemini 3.0 Flash, Firecrawl v4, @react-pdf/renderer.

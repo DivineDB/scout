@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { JobPost } from "@/types/job";
 import {
   Sheet,
@@ -12,14 +13,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { Loader2 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <p
       className="mb-2 text-[10px] font-bold uppercase tracking-[0.12em]"
-      style={{ color: "#94A3B8" }} // Slate-400
+      style={{ color: "#71717A" }}
     >
       {children}
     </p>
@@ -28,23 +29,10 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function CheckRow({ text }: { text: string }) {
   return (
-    <li className="flex items-start gap-2 text-[12.5px]" style={{ color: "var(--muted-foreground)" }}>
+    <li className="flex items-start gap-2 text-[12.5px]" style={{ color: "#A1A1AA" }}>
       <span className="mt-0.5 text-[11px]" style={{ color: "#00FFC2" }}>✓</span>
       <span className="leading-relaxed font-medium">{text}</span>
     </li>
-  );
-}
-
-function buildAISummary(job: JobPost): string {
-  const top = job.tech_stack.slice(0, 3).join(", ");
-  return (
-    `${job.company.name} is looking for a ${job.role} to work ${job.remote_status.toLowerCase()} ` +
-    `in their "${job.company.industry}" vertical. Core stack includes ${top}. ` +
-    `At ${job.match_score}% alignment with your profile, the biggest gaps are ` +
-    (job.match_score < 70
-      ? "in tech-stack fit and location preference."
-      : "minor — this is a strong apply.") +
-    ` Salary range ₹${job.pay.min}–${job.pay.max}L, ${job.experience_level}.`
   );
 }
 
@@ -58,9 +46,9 @@ export function JobInsightSheet({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const [isPromoting, setIsPromoting] = useState(false);
 
   if (!job) return null;
-  const summary = buildAISummary(job);
 
   const handleApply = () => {
     const quickIntro = `Hi! I'm an engineer passionate about building great products. I scored a ${job.match_score}% match for the ${job.role} position at ${job.company.name} and would love to chat.`;
@@ -72,16 +60,19 @@ export function JobInsightSheet({
   };
 
   const promoteJobToSerious = async () => {
-    // Validate ID before attempting update
+    // Validate UUID before attempting update
     const jobId = job?.id;
     if (!jobId || typeof jobId !== "string" || jobId.trim() === "") {
-      toast.error("Cannot promote: Job ID is missing or invalid.");
+      toast.error("Cannot promote: Job ID is missing or invalid.", {
+        description: "This may be a mock job that was not saved to the database.",
+      });
       return;
     }
 
-    try {
-      const toastId = toast.loading("Moving to Serious Mode...");
+    setIsPromoting(true);
+    const toastId = toast.loading("Moving to Serious Mode...");
 
+    try {
       const res = await fetch("/api/job/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -90,38 +81,44 @@ export function JobInsightSheet({
       const data = await res.json();
 
       if (!res.ok) {
-        toast.dismiss(toastId);
-        toast.error(`Promote failed: ${data.error || "Unknown error"}`);
+        // Surface the exact Supabase error, never hide it
+        toast.error(`Promote failed: ${data.error || "Unknown error"}`, { id: toastId });
         return;
       }
 
-      toast.dismiss(toastId);
-      toast.success("Added to your Serious Queue!");
+      toast.success("Added to your Serious Queue! 🚀", { id: toastId });
       onClose();
       router.push("/dashboard/serious");
     } catch (err: any) {
-      toast.error(`Unexpected error: ${err?.message ?? String(err)}`);
+      toast.error(`Unexpected error: ${err?.message ?? String(err)}`, { id: toastId });
+    } finally {
+      setIsPromoting(false);
     }
   };
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent
-        className="flex flex-col outline-none w-[90vw] max-w-[440px] p-0 sm:max-w-[440px] bg-card"
+        className="flex flex-col outline-none w-[90vw] max-w-[440px] p-0 sm:max-w-[440px]"
         style={{
-          borderLeft: "1px solid var(--border)",
+          background: "#050505",
+          borderLeft: "1px solid rgba(255,255,255,0.1)",
+          boxShadow: "-20px 0 60px rgba(0,0,0,0.7)",
         }}
       >
         {/* Header */}
-        <SheetHeader className="border-b px-5 py-4 shrink-0 text-left" style={{ borderColor: "var(--border)" }}>
+        <SheetHeader
+          className="border-b px-5 py-4 shrink-0 text-left"
+          style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}
+        >
           <div>
-            <SheetDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            <SheetDescription className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#71717A" }}>
               {job.company.name} · {job.company.industry}
             </SheetDescription>
-            <SheetTitle className="text-lg font-bold leading-snug mt-0.5 text-foreground">
+            <SheetTitle className="text-lg font-bold leading-snug mt-0.5" style={{ color: "#FAFAFA" }}>
               {job.role}
             </SheetTitle>
-            <p className="mt-1 text-xs font-semibold text-muted-foreground">
+            <p className="mt-1 text-xs font-semibold" style={{ color: "#A1A1AA" }}>
               {job.remote_status} · {job.location} · ₹{job.pay.min}–{job.pay.max}L
             </p>
           </div>
@@ -129,26 +126,26 @@ export function JobInsightSheet({
 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
-          {/* AI Distilled Summary (3 bullets conceptually, or short paragraph) */}
+          {/* AI Distilled Summary */}
           <section>
             <SectionLabel>AI-Distilled Insight</SectionLabel>
             <div
               className="rounded-lg p-3.5 text-[12.5px] leading-relaxed font-semibold shadow-sm"
               style={{
-                background: "rgba(0, 255, 194, 0.08)",
-                border: "1px solid rgba(0, 255, 194, 0.2)",
-                color: "var(--foreground)",
+                background: "rgba(0, 255, 194, 0.06)",
+                border: "1px solid rgba(0, 255, 194, 0.18)",
+                color: "#FAFAFA",
               }}
             >
               <div className="flex items-center gap-1.5 mb-1.5">
                 <span className="flex h-4 w-4 items-center justify-center rounded-sm bg-[#00FFC2] text-[8px] font-black text-[#0F172A]">
                   Sc
                 </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#047857]">
+                <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#00FFC2" }}>
                   Scout
                 </span>
               </div>
-              <ul className="list-disc pl-4 space-y-1 mt-2 font-medium" style={{ color: "var(--foreground)" }}>
+              <ul className="list-disc pl-4 space-y-1 mt-2 font-medium" style={{ color: "#A1A1AA" }}>
                 <li>Strong alignment: {job.tech_stack.slice(0, 2).join(", ")}</li>
                 <li>Salary matches your ₹8-14L expectation: ₹{job.pay.min}-{job.pay.max}L</li>
                 <li>{job.match_score >= 80 ? "Highly recommended to apply immediately." : "Moderate match on required experience level."}</li>
@@ -158,7 +155,7 @@ export function JobInsightSheet({
 
           <section>
             <SectionLabel>About the Role</SectionLabel>
-            <p className="text-[12.5px] leading-relaxed font-medium" style={{ color: "var(--muted-foreground)" }}>
+            <p className="text-[12.5px] leading-relaxed font-medium" style={{ color: "#A1A1AA" }}>
               {job.description}
             </p>
           </section>
@@ -174,28 +171,41 @@ export function JobInsightSheet({
         </div>
 
         {/* Footer */}
-        <SheetFooter className="shrink-0 border-t px-5 py-4" style={{ borderColor: "var(--border)" }}>
+        <SheetFooter
+          className="shrink-0 border-t px-5 py-4"
+          style={{ borderColor: "rgba(255,255,255,0.08)", background: "rgba(0,0,0,0.4)" }}
+        >
           <div className="flex w-full flex-col gap-2">
-            <Button
-              size="lg"
-              className="w-full text-sm font-bold shadow-sm hover:scale-[0.99] transition-transform"
+            <button
+              className="w-full rounded-xl py-3 text-sm font-bold transition-all hover:opacity-90 active:scale-[0.98]"
               onClick={handleApply}
-              style={{ background: "var(--foreground)", color: "var(--background)" }}
+              style={{ background: "#00FFC2", color: "#050505" }}
             >
-              Copy Quick Intro & Apply
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="w-full text-sm font-bold"
-              style={{ background: "var(--secondary)", borderColor: "var(--border)", color: "var(--muted-foreground)" }}
+              Copy Quick Intro &amp; Apply
+            </button>
+            <button
+              disabled={isPromoting}
+              className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                color: isPromoting ? "#71717A" : "#FAFAFA",
+              }}
               onClick={promoteJobToSerious}
             >
-              🚀 Promote to Serious Mode
-            </Button>
+              {isPromoting ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Promoting…
+                </>
+              ) : (
+                "🚀 Promote to Serious Mode"
+              )}
+            </button>
           </div>
         </SheetFooter>
       </SheetContent>
     </Sheet>
   );
 }
+

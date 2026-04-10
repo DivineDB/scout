@@ -117,6 +117,15 @@ export function JobCard({ job: initialJob, onClick }: { job: JobPost; onClick: (
   const [job, setJob] = useState<JobPost>(initialJob);
   const [isRedistilling, setIsRedistilling] = useState(false);
 
+  // ── Critical UUID guard ──────────────────────────────────────────────────────
+  if (!job.id || typeof job.id !== "string" || job.id.trim() === "") {
+    console.error(
+      "[JobCard] CRITICAL: job.id is missing or invalid. " +
+      "This job cannot be promoted. Check the DB insert — the 'id' column must be a valid UUID.",
+      { role: job.role, company: job.company?.name }
+    );
+  }
+
   const topTech = job.tech_stack.slice(0, 3);
   const salaryLabel = `₹${job.pay.min}–${job.pay.max}L`;
 

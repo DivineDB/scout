@@ -696,9 +696,9 @@ export default function ProfilePage() {
           showCloseButton={false}
           className="!w-full sm:!max-w-lg flex flex-col !p-0 !gap-0 !border-l overflow-hidden"
           style={{
-            background: "#080808",
-            borderLeft: "1px solid rgba(0,255,194,0.12)",
-            boxShadow: "-20px 0 60px rgba(0,0,0,0.6), -1px 0 0 rgba(0,255,194,0.05)",
+            background: "#050505",
+            borderLeft: "1px solid rgba(255,255,255,0.1)",
+            boxShadow: "-20px 0 60px rgba(0,0,0,0.7), -1px 0 0 rgba(0,255,194,0.04)",
           }}
         >
           {/* Sheet Header */}
