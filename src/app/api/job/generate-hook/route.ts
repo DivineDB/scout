@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-flash-latest",
       contents: prompt,
       config: {
         maxOutputTokens: 180,
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Error generating hook:", error);
     return NextResponse.json(
-      { error: "Failed to generate hook." },
+      { error: `Mock test failed: ${error instanceof Error ? error.message : String(error)}` },
       { status: 500 }
     );
   }

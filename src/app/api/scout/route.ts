@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     let companyName = "Unknown Company";
     try {
       const companyResponse = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
+        model: "gemini-flash-latest",
         contents: `Extract the primary company name hiring for this job from the raw text. Return ONLY the company name as a string, nothing else.\n\nText: ${rawText.substring(0, 4000)}`
       });
       companyName = companyResponse.text?.trim() || "Unknown Company";
