@@ -454,7 +454,7 @@ export default function ProfilePage() {
   return (
     <div
       className="flex-1 overflow-auto p-8 relative min-h-screen"
-      style={{ background: "#050505", color: "var(--foreground)" }}
+      style={{ background: "#0A0A0A", color: "var(--foreground)" }}
     >
       {/* Ambient glow */}
       <div
@@ -722,7 +722,7 @@ export default function ProfilePage() {
           showCloseButton={false}
           className="!w-full sm:!max-w-lg flex flex-col !p-0 !gap-0 !border-l overflow-hidden"
           style={{
-            background: "#050505",
+            background: "#0A0A0A",
             borderLeft: "1px solid rgba(255,255,255,0.1)",
             boxShadow: "-20px 0 60px rgba(0,0,0,0.7), -1px 0 0 rgba(0,255,194,0.04)",
           }}

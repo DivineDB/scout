@@ -78,8 +78,8 @@
 
 /* Obsidian Dark Mode palette — "Obsidian Mint" identity */
 .dark {
-  --background:           #050505;
-  --foreground:           #FAFAFA; /* Pure White */
+  --background:           #0E1117;
+  --foreground:           #F1F5F9; /* Softer White */
   --card:                 #121212;
   --card-foreground:      #FAFAFA;
   --popover:              #121212;
