@@ -3,8 +3,12 @@
 Designed to cut through the noise, distil signal, and target high-pay remote roles seamlessly.
 
 ## Current Progress & Status
-- **Status**: Mission 6.10 — Scout Config Hub — Successfully Executed.
+- **Status**: Mission 6.11 — Persistence & Model Swap — Successfully Executed.
 - **Features Implemented**: 
+  - **Gemini 3.0 Model Swap** *(6.11)*: Standardized on `gemini-3.0-flash` across all AI pipelines (Scouting, Morphing, Gap Analysis) for better throughput and lower latency.
+  - **Auth-Aware Persistence** *(6.11)*: Refactored `api/profile/update` to target `id` PK (linked to `auth.uid()`) using `@supabase/ssr` server-side context, resolving the `profile_key` mismatch.
+  - **Toast ID Resolution** *(6.11)*: Fixed the Sonner feedback loop in Profile Hub by correctly assigning and settling a `toastId` for "Syncing..." → "Success/Error" transitions.
+  - **Tech Arsenal UI Polish** *(6.11)*: Hard-coded `#121212` backgrounds and subtle borders into the Tech Arsenal inputs to eliminate light-mode flickering.
   - **Scout Config Hub** *(6.10)*: Centralized slide-over sheet triggered by clicking anywhere on identity, preferences, or tech stack cards. Replaced scattered edit icons.
   - **Unified Config Form** *(6.10)*: Integrated multi-tab form (Identity, Search Logic, Tech Arsenal) inside the sheet for streamlined profile updates.
   - **SkillCategoryEditor** *(6.10)*: Responsive multi-select interface for the Tech Arsenal category, allowing real-time add/remove of skill badges with search and comma-separated batch entry.
@@ -23,7 +27,7 @@ Designed to cut through the noise, distil signal, and target high-pay remote rol
   - **Data Hydration** *(6.9.5)*: `serious/[id]/page.tsx` pulls `generated_hook` strictly from DB mapping state to avoid re-generating hooks repeatedly per visit.
 
 ## Architecture
-- **Tech Stack**: Next.js 15, Supabase (with service role key for API routes), Gemini 1.5 Flash, Firecrawl v4, @react-pdf/renderer.
+- **Tech Stack**: Next.js 15, Supabase (with service role key for API routes), Gemini 3.0 Flash, Firecrawl v4, @react-pdf/renderer.
 - **Design System**: 'Obsidian Mint' — **always dark-first**.
   - **Palette**: Deep Black (`#050505`) / Cards (`#121212`) / Borders (`rgba(255,255,255,0.08)`).
   - **Typography**: Headers in Pure White (`#FAFAFA`), Body in Zinc-400 (`#A1A1AA`).

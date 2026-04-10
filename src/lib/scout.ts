@@ -90,7 +90,7 @@ export async function distillJobData(rawText: string, companyIntel: string): Pro
   `;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.0-flash',
     contents: prompt,
     config: {
       responseMimeType: "application/json",

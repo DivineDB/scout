@@ -235,8 +235,8 @@ function SkillCategoryEditor({
           placeholder="Add skill, press Enter…"
           className="flex-1 rounded-lg px-3 py-1.5 text-xs font-medium focus:outline-none transition-all"
           style={{
-            background: "rgba(0,0,0,0.3)",
-            border: "1px solid rgba(255,255,255,0.08)",
+            background: "#121212",
+            border: "1px solid rgba(255,255,255,0.1)",
             color: "#FAFAFA",
           }}
           onFocus={(e) => {
@@ -350,8 +350,7 @@ export default function ProfilePage() {
     setIsSaving(true);
 
     // Optimistic toast immediately
-    toast("Syncing your profile with Scout…", {
-      icon: "⚡",
+    const toastId = toast.loading("Syncing your profile with Scout…", {
       style: {
         background: "#0A0A0A",
         border: "1px solid rgba(0,255,194,0.2)",
@@ -394,6 +393,7 @@ export default function ProfilePage() {
       }
 
       toast.success("Scout logic updated. Matches re-evaluating…", {
+        id: toastId,
         style: {
           background: "#0A0A0A",
           border: "1px solid rgba(0,255,194,0.3)",
@@ -405,6 +405,7 @@ export default function ProfilePage() {
       router.refresh();
     } catch (err: any) {
       toast.error(`Update failed: ${err.message}`, {
+        id: toastId,
         style: {
           background: "#0A0A0A",
           border: "1px solid rgba(239,68,68,0.3)",

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/utils/supabase/server";
+import { cookies } from "next/headers";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey);
 
 export interface ProfileUpdate {
   city?: string;
@@ -15,9 +17,18 @@ export interface ProfileUpdate {
 
 export async function POST(req: Request) {
   try {
+    const cookieStore = await cookies();
+    const supabaseSession = createClient(cookieStore);
+    const { data: { user } } = await supabaseSession.auth.getUser();
+
+    if (!user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body: ProfileUpdate = await req.json();
 
     const payload = {
+      id: user.id,
       profile_key: "main",
       city: body.city,
       state: body.state,
@@ -29,9 +40,9 @@ export async function POST(req: Request) {
 
     console.log("[Profile] Upserting payload:", JSON.stringify(payload, null, 2));
 
-    const { data: savedProfile, error: upsertError } = await supabase
+    const { data: savedProfile, error: upsertError } = await supabaseAdmin
       .from("user_profile")
-      .upsert(payload, { onConflict: "profile_key" })
+      .upsert(payload, { onConflict: "id" })
       .select()
       .single();
 
@@ -46,7 +57,7 @@ export async function POST(req: Request) {
     console.log("[Profile] Saved successfully:", savedProfile?.id);
 
     // Flag all jobs as stale (match needs re-validation against new profile)
-    const { error: staleError } = await supabase
+    const { error: staleError } = await supabaseAdmin
       .from("jobs")
       .update({ match_stale: true, updated_at: new Date().toISOString() })
       .in("status", ["casual", "serious"]);
@@ -73,10 +84,18 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const { data, error } = await supabase
+    const cookieStore = await cookies();
+    const supabaseSession = createClient(cookieStore);
+    const { data: { user } } = await supabaseSession.auth.getUser();
+
+    if (!user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data, error } = await supabaseAdmin
       .from("user_profile")
       .select("*")
-      .eq("profile_key", "main")
+      .eq("id", user.id)
       .single();
 
     if (error && error.code !== "PGRST116") throw error; // PGRST116 = no rows
