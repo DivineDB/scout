@@ -6,6 +6,7 @@ import { Persona } from "@/types/persona";
 import { Loader2, X, Check, Zap, ChevronRight, Settings2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { createClient as createBrowserClient } from "@/utils/supabase/client";
 import {
   Sheet,
   SheetContent,
@@ -21,6 +22,8 @@ interface ProfileOverride {
   salary_min?: number;
   salary_ideal?: number;
   skills?: Record<string, string[]>;
+  contact_email?: string;
+  contact_phone?: string;
 }
 
 type TabId = "identity" | "search-logic" | "tech-arsenal";
@@ -308,18 +311,35 @@ export default function ProfilePage() {
   const [draftSalaryMin, setDraftSalaryMin] = useState<number>(0);
   const [draftSalaryIdeal, setDraftSalaryIdeal] = useState<number>(0);
   const [draftSkills, setDraftSkills] = useState<Record<string, string[]>>({});
+  const [draftEmail, setDraftEmail] = useState("");
+  const [draftPhone, setDraftPhone] = useState("");
+
+  /** Get a fresh Bearer token from the browser Supabase client */
+  const getAuthHeader = async (): Promise<Record<string, string>> => {
+    try {
+      const browserClient = createBrowserClient();
+      const { data } = await browserClient.auth.getSession();
+      const token = data?.session?.access_token;
+      if (token) return { Authorization: `Bearer ${token}` };
+    } catch {}
+    return {};
+  };
 
   const profile = mergeProfile(base, override);
 
   // Fetch profile override on mount
   useEffect(() => {
-    fetch("/api/profile/update")
-      .then((r) => r.json())
-      .then(({ profile: p }) => {
-        if (p) setOverride(p);
-      })
-      .catch(console.error)
-      .finally(() => setIsLoading(false));
+    (async () => {
+      const authHeader = await getAuthHeader();
+      fetch("/api/profile/update", { headers: authHeader })
+        .then((r) => r.json())
+        .then(({ profile: p }) => {
+          if (p) setOverride(p);
+        })
+        .catch(console.error)
+        .finally(() => setIsLoading(false));
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Seed draft state from current profile whenever sheet opens
@@ -329,6 +349,8 @@ export default function ProfilePage() {
       setDraftState(profile.location.state);
       setDraftSalaryMin(profile.preferences.desired_pay_inr_lpa.min);
       setDraftSalaryIdeal(profile.preferences.desired_pay_inr_lpa.ideal);
+      setDraftEmail(override?.contact_email ?? profile.contact.email ?? "");
+      setDraftPhone(override?.contact_phone ?? profile.contact.phone ?? "");
       // Deep-clone skills
       const cloned: Record<string, string[]> = {};
       for (const [cat, arr] of Object.entries(profile.skills)) {
@@ -338,7 +360,7 @@ export default function ProfilePage() {
       setActiveTab(tab);
       setSheetOpen(true);
     },
-    [profile]
+    [profile, override]
   );
 
   const updateDraftSkillCategory = (category: string, newSkills: string[]) => {
@@ -349,7 +371,6 @@ export default function ProfilePage() {
   const handleUpdateBrain = async () => {
     setIsSaving(true);
 
-    // Optimistic toast immediately
     const toastId = toast.loading("Syncing your profile with Scout…", {
       style: {
         background: "#0A0A0A",
@@ -359,17 +380,21 @@ export default function ProfilePage() {
     });
 
     try {
+      const authHeader = await getAuthHeader();
+
       const body: ProfileOverride = {
         city: draftCity,
         state: draftState,
         salary_min: Number(draftSalaryMin),
         salary_ideal: Number(draftSalaryIdeal),
         skills: draftSkills,
+        contact_email: draftEmail,
+        contact_phone: draftPhone,
       };
 
       const res = await fetch("/api/profile/update", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeader },
         body: JSON.stringify(body),
       });
 
@@ -387,6 +412,8 @@ export default function ProfilePage() {
           salary_min: data.profile.salary_min,
           salary_ideal: data.profile.salary_ideal,
           skills: data.profile.skills,
+          contact_email: data.profile.contact_email,
+          contact_phone: data.profile.contact_phone,
         });
       } else {
         setOverride(body);
@@ -811,28 +838,21 @@ export default function ProfilePage() {
                   placeholder="e.g. Karnataka"
                 />
 
-                <div
-                  className="rounded-xl p-4 space-y-2"
-                  style={{
-                    background: "rgba(255,255,255,0.02)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                  }}
-                >
-                  <FieldLabel>Read-only fields</FieldLabel>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <FieldLabel>Email</FieldLabel>
-                      <p className="text-xs mt-0.5 font-medium" style={{ color: "#A1A1AA" }}>
-                        {profile.contact.email}
-                      </p>
-                    </div>
-                    <div>
-                      <FieldLabel>Phone</FieldLabel>
-                      <p className="text-xs mt-0.5 font-medium" style={{ color: "#A1A1AA" }}>
-                        {profile.contact.phone}
-                      </p>
-                    </div>
-                  </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <SheetInput
+                    label="Contact Email"
+                    type="email"
+                    value={draftEmail}
+                    onChange={setDraftEmail}
+                    placeholder="you@example.com"
+                  />
+                  <SheetInput
+                    label="Phone"
+                    type="tel"
+                    value={draftPhone}
+                    onChange={setDraftPhone}
+                    placeholder="+91 99999 99999"
+                  />
                 </div>
               </div>
             )}
