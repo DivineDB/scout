@@ -3,8 +3,11 @@
 Designed to cut through the noise, distil signal, and target high-pay remote roles seamlessly.
 
 ## Current Progress & Status
-- **Status**: Mission 6.13 — Emergency Model & ID Sync — COMPLETE.
+- **Status**: Mission 6.14 — MCP-Driven Database Alignment — COMPLETE.
 - **Features Implemented**: 
+  - **Column Fix: `distillation_pending`** *(6.14)*: Identified and repaired the missing `distillation_pending` column in the `jobs` table via MCP, resolving 500 errors in the scouting pipeline.
+  - **Column Audit & Alignment** *(6.14)*: Conducted a full MCP audit of `jobs` and `user_profile` schemas to ensure precise mapping with API routes.
+  - **Permission Verification** *(6.14)*: Confirmed that RLS is disabled and that service-role-key upserts to `user_profile` are fully operational via live MCP database testing.
   - **Gemini 1.5 Flash Latest Swap** *(6.13)*: Standardsized on `gemini-1.5-flash-latest` across all pipelines to resolve model name resolution errors and optimize for low-latency v1beta calls.
   - **Stub-First Scouting** *(6.13)*: Rewrote the scouting pipeline to save a "Raw Stub" to Supabase immediately after scraping. This guarantees a native UUID for the job even if AI distillation fails or is delayed.
   - **Match Validation Softening** *(6.13)*: Changed `match_explanation` from a hard validation throw to a soft fallback fill, preventing AI extraction errors from crashing the entire save pipeline.
