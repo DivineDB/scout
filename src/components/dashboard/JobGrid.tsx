@@ -51,8 +51,11 @@ export function JobGrid() {
       )
       .subscribe();
 
+    window.addEventListener("scout-refresh", fetchJobs);
+
     return () => {
       supabase.removeChannel(channel);
+      window.removeEventListener("scout-refresh", fetchJobs);
     };
   }, []);
 

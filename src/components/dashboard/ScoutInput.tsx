@@ -37,6 +37,7 @@ export function ScoutInput() {
       toast.success("Job successfully scouted and saved!", { id: "scout-toast" });
       setUrl("");
       router.refresh();
+      window.dispatchEvent(new Event("scout-refresh"));
     } catch (error: any) {
       console.error(error);
       toast.error(error.message, { id: "scout-toast" });
