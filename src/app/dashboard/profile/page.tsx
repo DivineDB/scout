@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import meData from "@/data/me.json";
-import { Persona } from "@/types/persona";
+import { Persona, ExperienceDetail } from "@/types/persona";
 import { Loader2, X, Check, Zap, ChevronRight, Settings2Icon } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -17,7 +17,7 @@ import {
 
 import { mergeProfile, type ProfileOverride } from "@/lib/profile";
 
-type TabId = "identity" | "search-logic" | "tech-arsenal";
+type TabId = "identity" | "search-logic" | "tech-arsenal" | "career-story";
 
 // ── Ambient Glass Card ────────────────────────────────────────────────────────
 function GlassCard({
@@ -281,6 +281,7 @@ export default function ProfilePage() {
   const [draftSalaryMin, setDraftSalaryMin] = useState<number>(0);
   const [draftSalaryIdeal, setDraftSalaryIdeal] = useState<number>(0);
   const [draftSkills, setDraftSkills] = useState<Record<string, string[]>>({});
+  const [draftExperience, setDraftExperience] = useState<ExperienceDetail[]>([]);
   const [draftEmail, setDraftEmail] = useState("");
   const [draftPhone, setDraftPhone] = useState("");
 
@@ -326,6 +327,15 @@ export default function ProfilePage() {
         cloned[cat] = [...arr];
       }
       setDraftSkills(cloned);
+      setDraftExperience(
+        override?.experience_details ??
+          (profile.experience_details
+            ? profile.experience_details.map((e) => ({
+                ...e,
+                bullets: [...e.bullets],
+              }))
+            : [])
+      );
       setActiveTab(tab);
       setSheetOpen(true);
     },
@@ -359,6 +369,7 @@ export default function ProfilePage() {
         skills: draftSkills,
         contact_email: draftEmail,
         contact_phone: draftPhone,
+        experience_details: draftExperience,
       };
 
       const res = await fetch("/api/profile/update", {
@@ -383,6 +394,7 @@ export default function ProfilePage() {
           skills: data.profile.skills,
           contact_email: data.profile.contact_email,
           contact_phone: data.profile.contact_phone,
+          experience_details: data.profile.experience_details,
         });
       } else {
         setOverride(body);
@@ -746,6 +758,7 @@ export default function ProfilePage() {
                   { id: "identity", label: "Identity" },
                   { id: "search-logic", label: "Search Logic" },
                   { id: "tech-arsenal", label: "Tech Arsenal" },
+                  { id: "career-story", label: "Experience" },
                 ] as { id: TabId; label: string }[]
               ).map((tab) => (
                 <TabButton
@@ -941,6 +954,100 @@ export default function ProfilePage() {
                     onChange={(newSkills) => updateDraftSkillCategory(category, newSkills)}
                   />
                 ))}
+              </div>
+            )}
+
+            {/* ── Career Story Tab ── */}
+            {activeTab === "career-story" && (
+              <div className="space-y-5">
+                <div
+                  className="rounded-xl p-4 space-y-1"
+                  style={{
+                    background: "rgba(0,255,194,0.03)",
+                    border: "1px solid rgba(0,255,194,0.1)",
+                  }}
+                >
+                  <p className="text-[11px] font-bold" style={{ color: "#00FFC2" }}>
+                    💼 Career Story
+                  </p>
+                  <p className="text-xs leading-relaxed" style={{ color: "#71717A" }}>
+                    Update your experience details. Bullet points will be morphed dynamically by the AI for each job.
+                  </p>
+                </div>
+                {draftExperience.map((exp, idx) => (
+                  <div key={idx} className="space-y-4 p-4 rounded-xl" style={{ border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.02)" }}>
+                    <div className="grid grid-cols-2 gap-4">
+                      <SheetInput
+                        label="Role"
+                        value={exp.role}
+                        onChange={(v) => {
+                          const newExp = [...draftExperience];
+                          newExp[idx].role = v;
+                          setDraftExperience(newExp);
+                        }}
+                      />
+                      <SheetInput
+                        label="Company"
+                        value={exp.company}
+                        onChange={(v) => {
+                          const newExp = [...draftExperience];
+                          newExp[idx].company = v;
+                          setDraftExperience(newExp);
+                        }}
+                      />
+                      <SheetInput
+                        label="Duration"
+                        value={exp.duration}
+                        onChange={(v) => {
+                          const newExp = [...draftExperience];
+                          newExp[idx].duration = v;
+                          setDraftExperience(newExp);
+                        }}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <FieldLabel>Bullets (One per line)</FieldLabel>
+                      <textarea
+                        value={exp.bullets.join("\n")}
+                        onChange={(e) => {
+                          const newExp = [...draftExperience];
+                          newExp[idx].bullets = e.target.value.split("\n").filter(b => b.trim());
+                          setDraftExperience(newExp);
+                        }}
+                        rows={4}
+                        className="w-full rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none transition-all"
+                        style={{
+                          background: "rgba(255,255,255,0.04)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          color: "#A1A1AA",
+                          boxShadow: "inset 0 1px 2px rgba(0,0,0,0.3)",
+                        }}
+                      />
+                    </div>
+                    <button
+                        onClick={() => {
+                          const newExp = draftExperience.filter((_, i) => i !== idx);
+                          setDraftExperience(newExp);
+                        }}
+                        className="text-xs font-bold transition-colors"
+                        style={{ color: "#FCA5A5" }}
+                      >
+                        Remove Experience
+                      </button>
+                  </div>
+                ))}
+                
+                <button
+                  onClick={() => setDraftExperience([...draftExperience, { role: "", company: "", duration: "", bullets: [] }])}
+                  className="w-full py-2.5 rounded-lg border border-dashed transition-colors text-sm font-bold"
+                  style={{
+                    borderColor: "rgba(0,255,194,0.3)",
+                    color: "#00FFC2",
+                    background: "transparent",
+                  }}
+                >
+                  + Add Role / Project
+                </button>
               </div>
             )}
           </div>

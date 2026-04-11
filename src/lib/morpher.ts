@@ -15,7 +15,7 @@ export async function morphResume(persona: Persona, job: JobPost): Promise<Morph
     1. Identify the 'Technical Theme' of the JD. Is it primarily about 'Performance', 'Scale', 'UX', 'AI Integration', or something else?
     2. Review the persona's experience details (projects/roles).
     3. Reorder the experience_details array to prioritize the project/role that BEST represents the identified Technical Theme at the top.
-    4. Within each experience, reorder the bullets to prioritize those that match the JD's top tech stack.
+    4. Within each experience, rewrite and tailor the bullets to heavily emphasize how the past experience maps to the JD's stack and requirements. You MUST rewrite the descriptions slightly to make them sound like a perfect match without modifying the factual nature of the roles. Reorder the newly tailored bullets to prioritize the best matching ones at the top.
 
     Return the result strictly as a valid JSON matching this structure:
     {
@@ -41,7 +41,7 @@ export async function morphResume(persona: Persona, job: JobPost): Promise<Morph
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-flash-latest",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",

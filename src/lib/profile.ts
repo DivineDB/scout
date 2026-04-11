@@ -8,6 +8,7 @@ export interface ProfileOverride {
   skills?: Record<string, string[]>;
   contact_email?: string;
   contact_phone?: string;
+  experience_details?: Persona["experience_details"];
 }
 
 export function mergeProfile(base: Persona, override: ProfileOverride | null | undefined): Persona {
@@ -26,11 +27,16 @@ export function mergeProfile(base: Persona, override: ProfileOverride | null | u
         ideal: override.salary_ideal ?? base.preferences.desired_pay_inr_lpa.ideal,
       },
     },
-    skills: (override.skills as Persona["skills"]) ?? base.skills,
+    skills: (() => {
+      const s = { ...((override.skills as Persona["skills"]) ?? base.skills) };
+      if ("_scout_experience" in s) delete (s as any)._scout_experience;
+      return s;
+    })(),
     contact: {
       ...base.contact,
       email: override.contact_email ?? base.contact.email,
       phone: override.contact_phone ?? base.contact.phone,
     },
+    experience_details: override.experience_details ?? base.experience_details,
   };
 }

@@ -13,6 +13,7 @@ export interface ProfileUpdate {
   skills?: Record<string, string[]>;
   contact_email?: string;
   contact_phone?: string;
+  experience_details?: Record<string, any>[];
 }
 
 /**
@@ -57,9 +58,16 @@ export async function POST(req: Request) {
       state: body.state ?? null,
       salary_min: body.salary_min ?? null,
       salary_ideal: body.salary_ideal ?? null,
-      skills: body.skills ?? null,
       updated_at: new Date().toISOString(),
     };
+
+    // Store experience_details inside the existing skills JSONB column to avoid Postgres schema migrations
+    if (body.skills || body.experience_details) {
+      payload.skills = {
+        ...(body.skills || {}),
+        _scout_experience: body.experience_details ?? null
+      };
+    }
 
     // Only include contact fields if explicitly provided
     if (body.contact_email !== undefined) payload.contact_email = body.contact_email;
@@ -93,6 +101,11 @@ export async function POST(req: Request) {
       console.warn("[Profile] Failed to flag jobs as stale:", staleError.message);
     }
 
+    if (savedProfile?.skills?._scout_experience) {
+      savedProfile.experience_details = savedProfile.skills._scout_experience;
+      delete savedProfile.skills._scout_experience;
+    }
+
     return NextResponse.json({
       success: true,
       profile: savedProfile,
@@ -123,6 +136,11 @@ export async function GET(req: Request) {
       .single();
 
     if (error && error.code !== "PGRST116") throw error;
+
+    if (data?.skills?._scout_experience) {
+      data.experience_details = data.skills._scout_experience;
+      delete data.skills._scout_experience;
+    }
 
     return NextResponse.json({ profile: data ?? null });
   } catch (error) {

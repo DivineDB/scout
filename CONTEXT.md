@@ -3,16 +3,16 @@
 Designed to cut through the noise, distil signal, and target high-pay remote roles seamlessly.
 
 ## Current Progress & Status
-- **Status**: Mission 6.14 — MCP-Driven Database Alignment — COMPLETE.
+- **Status**: Mission 7.0 — The Ghost Scouter — IN PROGRESS.
 - **Features Implemented**: 
+  - **Experience Details Persistence** *(6.18)*: Added `experience_details` column to `user_profile` table and integrated it into the Resume Command Center for persistent Career Story editing.
+  - **Gemini 2.5 Model Migration** *(6.18)*: Upgraded all AI pipelines to use `gemini-2.5` models to handle higher complexity and resolve rate-limiting issues on legacy endpoints.
+  - **Career Story Synchronization** *(6.18)*: Established robust real-time synchronization between the Dashboard Profile UI and the server-side Supabase persistence layer.
   - **Column Fix: `distillation_pending`** *(6.14)*: Identified and repaired the missing `distillation_pending` column in the `jobs` table via MCP, resolving 500 errors in the scouting pipeline.
-  - **Column Audit & Alignment** *(6.14)*: Conducted a full MCP audit of `jobs` and `user_profile` schemas to ensure precise mapping with API routes.
-  - **Permission Verification** *(6.14)*: Confirmed that RLS is disabled and that service-role-key upserts to `user_profile` are fully operational via live MCP database testing.
-  - **Gemini 1.5 Flash Latest Swap** *(6.13)*: Standardsized on `gemini-1.5-flash-latest` across all pipelines to resolve model name resolution errors and optimize for low-latency v1beta calls.
   - **Stub-First Scouting** *(6.13)*: Rewrote the scouting pipeline to save a "Raw Stub" to Supabase immediately after scraping. This guarantees a native UUID for the job even if AI distillation fails or is delayed.
   - **Match Validation Softening** *(6.13)*: Changed `match_explanation` from a hard validation throw to a soft fallback fill, preventing AI extraction errors from crashing the entire save pipeline.
-  - **Technical Error Surfacing** *(6.13)*: Updated the promotion UI to show real technical errors `[Status: 404]` instead of vague legacy messages when rows are missing.
-  - **Gemini 1.5 Pro Model Swap** *(6.12)*: Globally upgraded from `gemini-3.0-flash` to `gemini-1.5-pro` (and later refined in 6.13).
+  - **Technical Error Surfacing** *(6.13)*: Updated the promotion UI to show real technical errors `[Status: 404]` instead of legacy messages.
+  - **Gemini 1.5 Pro Model Swap** *(6.12)*: Globally upgraded from `gemini-3.0-flash` to `gemini-1.5-pro`.
 
 ## Architecture
 - **Tech Stack**: Next.js 15, Supabase (with service role key for API routes), Gemini 1.5 Flash Latest, Firecrawl v4, @react-pdf/renderer.
@@ -25,7 +25,7 @@ Designed to cut through the noise, distil signal, and target high-pay remote rol
 
 ## Supabase Schema (Critical Reference)
 - **`jobs`** table: `id` (uuid PK), `status` (text: `casual` | `serious`), `match_score`, `match_stale`, `match_explanation`, `generated_hook`, etc.
-- **`user_profile`** table: `id` (uuid PK), `profile_key` (text, unique, default `'main'`), `city`, `state`, `salary_min`, `salary_ideal`, `skills` (jsonb), `updated_at`.
+- **`user_profile`** table: `id` (uuid PK), `profile_key` (text, unique, default `'main'`), `city`, `state`, `salary_min`, `salary_ideal`, `skills` (jsonb), `experience_details` (text), `updated_at`.
 - **RLS Status**: Use service role key in API routes to bypass RLS. For dev debugging, run the provided SQL to disable RLS entirely.
 
 ## Persona Ref
@@ -42,7 +42,7 @@ Current Snapshot:
 - **Promoting**: Moving a job from `casual` → `serious` via `JobInsightSheet`.
 
 ## Automation Roadmap
-- **Next High-Priority Objective**: Mission 7: The Ghost Scouter (automated background scouting + alerts).
+- **Active Objective**: Mission 7.0: The Ghost Scouter (automated background scouting + alerts).
 
 ## Commands
 Run `npm run check-context` to verify agentic memory retention.
