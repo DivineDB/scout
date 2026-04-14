@@ -71,7 +71,7 @@ function parseRelativeDate(text: string): string {
   return new Date().toISOString();
 }
 
-// ─── Source 1: Serper.dev — Google Jobs ───────────────────────────────────────
+// ─── Source 1: Serper.dev — Google Jobs (with ATS fallback) ──────────────────
 async function fetchSerper(roles: string[]): Promise<RawJob[]> {
   const apiKey = process.env.SERPER_API_KEY;
   if (!apiKey) {
@@ -80,69 +80,125 @@ async function fetchSerper(roles: string[]): Promise<RawJob[]> {
   }
 
   console.log('[Ghost] Fetching from Serper.dev (Google Jobs)...');
+
+  // ── Constraint 1: Fixed query builder — never append 'engineer' if role implies it
   const queries = roles.map(role => {
-    const isEngineer = role.toLowerCase().includes('engineer');
-    return isEngineer ? `${role} Remote India` : `${role} engineer Remote India`;
+    const lower = role.toLowerCase();
+    const hasJobKeyword = lower.includes('engineer') || lower.includes('developer') ||
+                          lower.includes('designer') || lower.includes('manager') ||
+                          lower.includes('analyst');
+    return hasJobKeyword ? `${role} Remote India` : `${role} engineer Remote India`;
   });
 
   const allJobs: RawJob[] = [];
   const seen = new Set<string>();
 
   for (const q of queries) {
+    let jobsFetchedForQuery = false;
+
+    // ── Constraint 3: Strict POST to /jobs — only q, gl, hl in body
     try {
       const resp = await fetch('https://google.serper.dev/jobs', {
         method: 'POST',
         headers: {
-          'X-API-KEY': apiKey,
+          'X-API-KEY': process.env.SERPER_API_KEY || '',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ q, gl: 'in', hl: 'en' }),
         signal: AbortSignal.timeout(12000),
       });
 
-      if (!resp.ok) {
-        console.warn(`[Ghost] Serper returned ${resp.status} for query: ${q}`);
-        continue;
+      if (resp.ok) {
+        let data;
+        try { data = JSON.parse(await resp.text()); } catch { /* fall through */ }
+
+        if (Array.isArray(data?.jobs) && data.jobs.length > 0) {
+          for (const job of data.jobs) {
+            const id = `serper-${job.jobId ?? job.title?.slice(0, 20) ?? Math.random()}`;
+            if (seen.has(id)) continue;
+            seen.add(id);
+            allJobs.push({
+              external_id: id,
+              title: String(job.title ?? ''),
+              company: String(job.companyName ?? 'Unknown'),
+              description: String(job.description ?? '').substring(0, 600),
+              url: String(job.applyLink ?? job.jobHighlightsLink ?? ''),
+              posted_at: job.date ? parseRelativeDate(job.date) : new Date().toISOString(),
+              tags: Array.isArray(job.extensions) ? job.extensions.slice(0, 8) : [],
+              salary_info: job.salary ?? undefined,
+              location: String(job.location ?? 'India'),
+              source: 'serper',
+            });
+          }
+          jobsFetchedForQuery = true;
+          console.log(`[Ghost] /jobs succeeded for: ${q}`);
+        }
+      } else {
+        console.warn(`[Ghost] Serper /jobs returned ${resp.status} for query: ${q} — activating ATS fallback`);
       }
-
-      const rawText = await resp.text();
-      console.log(`[Ghost] Serper raw resp (20 chars): ${rawText.substring(0, 20)}`);
-      
-      let data;
-      try {
-        data = JSON.parse(rawText);
-      } catch (e) {
-        console.warn('[Ghost] Failed to parse Serper response:', e);
-        continue;
-      }
-      if (!Array.isArray(data?.jobs)) continue;
-
-      for (const job of data.jobs) {
-        const id = `serper-${job.jobId ?? job.title?.slice(0, 20) ?? Math.random()}`;
-        if (seen.has(id)) continue;
-        seen.add(id);
-
-        allJobs.push({
-          external_id: id,
-          title: String(job.title ?? ''),
-          company: String(job.companyName ?? 'Unknown'),
-          description: String(job.description ?? '').substring(0, 600),
-          url: String(job.applyLink ?? job.jobHighlightsLink ?? ''),
-          posted_at: job.date ? parseRelativeDate(job.date) : new Date().toISOString(),
-          tags: Array.isArray(job.extensions) ? job.extensions.slice(0, 8) : [],
-          salary_info: job.salary ?? undefined,
-          location: String(job.location ?? 'India'),
-          source: 'serper',
-        });
-      }
-
-      await new Promise(r => setTimeout(r, 300)); // brief pause between queries
     } catch (err) {
-      console.warn(`[Ghost] Serper query "${q}" failed:`, err);
+      console.warn(`[Ghost] Serper /jobs request failed for "${q}": ${err}`);
     }
+
+    // ── Constraint 2: ATS fallback dork on /search if /jobs failed
+    if (!jobsFetchedForQuery) {
+      // Extract role name without location modifiers for cleaner site dork
+      const cleanRole = q.replace(/ Remote India$/, '').replace(/ Remote$/, '').trim();
+      const dorkQuery = `(site:jobs.lever.co OR site:boards.greenhouse.io OR site:jobs.ashbyhq.com OR site:wellfound.com/jobs) "${cleanRole}" (Remote OR India)`;
+      console.log(`[Ghost] Serper fallback ATS dork: ${dorkQuery}`);
+
+      try {
+        const fallback = await fetch('https://google.serper.dev/search', {
+          method: 'POST',
+          headers: {
+            'X-API-KEY': process.env.SERPER_API_KEY || '',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ q: dorkQuery, gl: 'in', hl: 'en', num: 10 }),
+          signal: AbortSignal.timeout(12000),
+        });
+
+        if (fallback.ok) {
+          let fallbackData;
+          try { fallbackData = JSON.parse(await fallback.text()); } catch { /* skip */ }
+
+          const organicResults: Record<string, unknown>[] = Array.isArray(fallbackData?.organic)
+            ? fallbackData.organic
+            : [];
+
+          for (const result of organicResults) {
+            const link = String(result.link ?? '');
+            if (!link) continue;
+            const id = `serper-dork-${link.slice(-40)}`;
+            if (seen.has(id)) continue;
+            seen.add(id);
+
+            allJobs.push({
+              external_id: id,
+              title: String(result.title ?? cleanRole),
+              company: String(result.displayedLink ?? result.domain ?? 'Via ATS'),
+              description: String(result.snippet ?? '').substring(0, 600),
+              url: link,
+              posted_at: new Date().toISOString(),
+              tags: [cleanRole],
+              salary_info: undefined,
+              location: 'Remote / India',
+              source: 'serper',
+            });
+          }
+          console.log(`[Ghost] ATS fallback found ${organicResults.length} results for: ${cleanRole}`);
+        } else {
+          console.warn(`[Ghost] ATS fallback /search also failed: ${fallback.status}`);
+        }
+      } catch (err) {
+        console.warn(`[Ghost] ATS fallback request failed for "${cleanRole}": ${err}`);
+      }
+    }
+
+    await new Promise(r => setTimeout(r, 300)); // brief pause between queries
   }
 
-  console.log(`[Ghost] Serper: ${allJobs.length} jobs fetched`);
+  console.log(`[Ghost] Serper: ${allJobs.length} jobs fetched (primary + ATS fallback)`);
   return allJobs;
 }
 
@@ -217,26 +273,15 @@ async function fetchRemotive(roles: string[]): Promise<RawJob[]> {
 }
 
 // ─── Filter 1: Hard Gate ──────────────────────────────────────────────────────
-function passesHardGate(job: RawJob, salaryMinLPA: number): boolean {
-  // Age: must be < 48 hours old
+// Constraint 4: Age-only gate — salary check delegated to Gemini AI prompt below
+function passesHardGate(job: RawJob, _salaryMinLPA: number): boolean {
+  // Age: must be < 48 hours old. ATS fallback jobs get a pass (posted_at = now)
   const postedAt = new Date(job.posted_at);
   if (!isNaN(postedAt.getTime())) {
     const hoursOld = (Date.now() - postedAt.getTime()) / 3_600_000;
     if (hoursOld > 48) return false;
   }
-
-  // Salary gate (USD → LPA, soft — only reject if salary is clearly too low)
-  /*
-  if (job.salary_info) {
-    const m = job.salary_info.match(/\$?([\d,]+)/);
-    if (m) {
-      const usd = parseInt(m[1].replace(/,/g, ''), 10);
-      const lpa = (usd / 100_000) * 83;
-      if (lpa > 0 && lpa < salaryMinLPA) return false;
-    }
-  }
-  */
-
+  // Salary filtering is handled by the Gemini batch scorer (see prompt below)
   return true;
 }
 
@@ -272,7 +317,8 @@ Work preference: Remote / Hybrid
       .map((j, k) => `${k + 1}. ID:${j.external_id} | ${j.title} @ ${j.company} | Tags:${j.tags.join(',')} | ${j.description.substring(0, 200)}`)
       .join('\n');
 
-    const prompt = `You are a senior technical recruiter evaluating job fit. Respond ONLY with a valid JSON array — no markdown.
+    // Constraint 4: Gemini enforces salary gate — rejects roles clearly below 12L
+    const prompt = `You are a senior technical recruiter evaluating job fit for an Indian candidate. Respond ONLY with a valid JSON array — no markdown, no prose.
 
 Candidate Profile:
 ${profileCtx}
@@ -284,10 +330,12 @@ Return exactly ${batch.length} objects in order:
 [{"id":"<external_id>","match_score":<0-100>,"logic":"<one crisp sentence>"}]
 
 Scoring criteria:
-- 90–100 (🦄 Unicorn): All requirements align — role, seniority, remote, skills, salary
+- 90–100 (🦄 Unicorn): Role, seniority, remote/India, skills, and salary all align perfectly
 - 80–89 (Strong): Good fit, minor gaps only
-- 70–79 (Fair): Relevant but noticeable mismatches
-- <70 (Skip): Significant gaps in skills, seniority, or location`;
+- 70–79 (Fair): Relevant role but noticeable mismatches (location, stack, level)
+- <70 (Skip): Weak match — wrong domain, over/under-qualified, or clearly below 12L INR LPA
+
+CRITICAL SALARY RULE: If the job description or title clearly indicates a salary BELOW ₹12L LPA (e.g., it's a junior/internship/fresher role in a Tier-3 city with no remote option and low pay signals), assign a score below 70. When salary cannot be determined, do NOT penalise — default to assuming it meets the threshold.`;
 
     try {
       const resp = await ai.models.generateContent({

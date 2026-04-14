@@ -3,6 +3,11 @@
  * Standalone script invoked by GitHub Actions.
  * Usage: npx tsx src/scripts/ghost-runner.ts
  */
+import { config } from 'dotenv';
+import { resolve } from 'path';
+// Load .env.local for local dev; GitHub Actions injects env vars directly
+config({ path: resolve(process.cwd(), '.env.local') });
+
 import { conductGlobalSweep } from '../lib/ghost';
 
 async function main() {
