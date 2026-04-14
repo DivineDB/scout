@@ -1,10 +1,10 @@
 import * as cheerio from 'cheerio';
-import { GoogleGenAI, Type } from '@google/genai';
+import Groq from 'groq-sdk';
 import type { JobPost } from '../types/job';
 import FirecrawlApp from '@mendable/firecrawl-js';
 import meData from '../data/me.json';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 const firecrawl = new FirecrawlApp({ apiKey: process.env.FIRECRAWL_API_KEY || 'missing' });
 
 /**
@@ -60,9 +60,34 @@ export async function fetchCompanyIntel(companyName: string) {
 }
 
 /**
+ * Extract company name from raw job text using Groq 8B instant model
+ */
+export async function extractCompanyName(rawText: string): Promise<string> {
+  if (!groq) return "Unknown Company";
+  try {
+    const response = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      temperature: 0.1,
+      messages: [
+        {
+          role: "user",
+          content: `Extract the primary company name hiring for this job from the raw text. Return ONLY the company name as a string, nothing else.\n\nText: ${rawText.substring(0, 4000)}`
+        }
+      ]
+    });
+    return response.choices[0]?.message?.content?.trim() || "Unknown Company";
+  } catch (err) {
+    console.warn("Company extraction failed:", err);
+    return "Unknown Company";
+  }
+}
+
+/**
  * The Distiller Agent: analyzes raw HTML/text and company intel to generate a structured job post.
  */
 export async function distillJobData(rawText: string, companyIntel: string): Promise<Omit<JobPost, 'id' | 'is_active' | 'created_at' | 'updated_at'>> {
+  if (!groq) throw new Error("GROQ_API_KEY is missing");
+
   const prompt = `
     Analyze the following raw text from a job posting and company intelligence search snippets.
     Extract the requested details and format them strictly.
@@ -72,88 +97,61 @@ export async function distillJobData(rawText: string, companyIntel: string): Pro
     Make sure to integrate culture rating, top pro, and top con (from the company intel if available, or realistically hypothesize if snippets are sparse).
     Ensure the tech stack array is very precise.
 
-    Use strict BAML-style data extraction: only output valid JSON conforming exactly to the requested schema. No markdown wrapping.
+    You must output ONLY a valid JSON object with EXACTLY the following structure. Do NOT wrap it in markdown block quotes.
+
+    {
+      "company": {
+        "name": "string",
+        "website": "string",
+        "size": "Startup" | "Mid-size" | "Large" | "Enterprise",
+        "industry": "string"
+      },
+      "role": "string",
+      "experience_level": "Internship" | "Entry-level" | "Mid-level" | "Senior" | "Lead" | "Principal",
+      "job_type": "Full-time" | "Part-time" | "Contract" | "Freelance",
+      "pay": {
+        "min": 0,
+        "max": 0,
+        "currency": "INR"
+      },
+      "remote_status": "Remote" | "Hybrid" | "On-site",
+      "location": "string",
+      "tech_stack": ["string"],
+      "match_score": 0,
+      "match_explanation": "1 sentence explanation of the score",
+      "missing_skills": ["string"],
+      "description": "3-bullet AI summary of the role including the culture rating, top pro, and top con.",
+      "responsibilities": ["string"],
+      "requirements": ["string"],
+      "apply_url": "string or empty",
+      "posted_at": "ISO 8601 date",
+      "apply_by": "string or empty",
+      "tags": ["string"]
+    }
     
-    You also have context about the user whose profile you are evaluating against:
     User Profile Context:
     ${JSON.stringify(meData, null, 2)}
 
-    Determine a match_score (0-100) based on the user's profile context vs the job requirements.
-    Write a 1-sentence match_explanation explaining the score.
-    List any missing_skills (tech stack skills in the JD that the user profile explicitly lacks).
-
     Raw Job Post Text:
-    ${rawText}
+    ${rawText.substring(0, 10000)}
 
     Company Intel Snippets:
     ${companyIntel}
   `;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          company: {
-            type: Type.OBJECT,
-            properties: {
-              name: { type: Type.STRING },
-              website: { type: Type.STRING },
-              size: { type: Type.STRING, enum: ["Startup", "Mid-size", "Large", "Enterprise"] },
-              industry: { type: Type.STRING },
-            },
-            required: ["name", "size", "industry"],
-          },
-          role: { type: Type.STRING },
-          experience_level: { type: Type.STRING, enum: ["Internship", "Entry-level", "Mid-level", "Senior", "Lead", "Principal"] },
-          job_type: { type: Type.STRING, enum: ["Full-time", "Part-time", "Contract", "Freelance"] },
-          pay: {
-            type: Type.OBJECT,
-            properties: {
-              min: { type: Type.NUMBER },
-              max: { type: Type.NUMBER },
-              currency: { type: Type.STRING },
-            },
-            required: ["min", "max"],
-          },
-          remote_status: { type: Type.STRING, enum: ["Remote", "Hybrid", "On-site"] },
-          location: { type: Type.STRING },
-          tech_stack: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-          },
-          match_score: { type: Type.INTEGER, description: "Calculate a match score between 0 and 100 based on standard tech stacks. Let's assume a generic dev profile for now." },
-          match_explanation: { type: Type.STRING, description: "1-sentence reason for the match score" },
-          missing_skills: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Tags in the JD but missing from the user's skills" },
-          description: { type: Type.STRING, description: "3-bullet AI summary of the role including the culture rating, top pro, and top con." },
-          responsibilities: { type: Type.ARRAY, items: { type: Type.STRING } },
-          requirements: { type: Type.ARRAY, items: { type: Type.STRING } },
-          apply_url: { type: Type.STRING, description: "The application link if found" },
-          posted_at: { type: Type.STRING, description: "ISO 8601 date, default to today if unknown" },
-          apply_by: { type: Type.STRING },
-          tags: { type: Type.ARRAY, items: { type: Type.STRING } },
-        },
-        required: [
-          "company", "role", "experience_level", "job_type", "pay", 
-          "remote_status", "location", "tech_stack", "match_score", 
-          "match_explanation", "missing_skills",
-          "description", "responsibilities", "requirements", "apply_url",
-          "posted_at", "tags"
-        ],
-      },
-    },
+  const response = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    temperature: 0.2,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: "You are a master technical recruiter extracting structured job data perfectly into JSON format." },
+      { role: "user", content: prompt }
+    ]
   });
 
-  if (!response.text) {
-    throw new Error("Failed to distill data from Gemini.");
-  }
+  const text = response.choices[0]?.message?.content ?? '{}';
+  const parsedData = JSON.parse(text);
 
-  const parsedData = JSON.parse(response.text);
-
-  // ── Soft validation: fill match_explanation if missing instead of crashing ──
   if (
     !parsedData.match_explanation ||
     typeof parsedData.match_explanation !== "string" ||
@@ -163,5 +161,11 @@ export async function distillJobData(rawText: string, companyIntel: string): Pro
     parsedData.match_explanation = `${parsedData.match_score ?? 0}% match based on tech stack alignment.`;
   }
 
-  return parsedData;
+  // Ensure defaults for enums
+  if (!["Startup", "Mid-size", "Large", "Enterprise"].includes(parsedData.company?.size)) parsedData.company.size = "Startup";
+  if (!["Internship", "Entry-level", "Mid-level", "Senior", "Lead", "Principal"].includes(parsedData.experience_level)) parsedData.experience_level = "Entry-level";
+  if (!["Full-time", "Part-time", "Contract", "Freelance"].includes(parsedData.job_type)) parsedData.job_type = "Full-time";
+  if (!["Remote", "Hybrid", "On-site"].includes(parsedData.remote_status)) parsedData.remote_status = "Remote";
+
+  return parsedData as Omit<JobPost, 'id' | 'is_active' | 'created_at' | 'updated_at'>;
 }

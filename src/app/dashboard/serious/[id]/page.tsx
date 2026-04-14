@@ -174,8 +174,8 @@ export default function SeriousModePage({
     async function fetchJobAndAssets() {
       try {
         setIsLoading(true);
-        
-        // 1. Fetch Job
+
+        // 1. Fetch Job — select('*') always retrieves distilled_data
         const { data, error } = await supabase
           .from("jobs")
           .select("*")
@@ -203,13 +203,40 @@ export default function SeriousModePage({
           console.warn("Could not fetch profile overrides", e);
         }
 
-        // If this is an undistilled stub, trigger re-distillation immediately
-        if ((fetched as any).distillation_pending) {
+        // 3. Resolve distilled_data instantly — no LLM calls needed
+        if (fetched.distilled_data) {
+          // ✅ Pre-computed data available — render instantly
+          const d = fetched.distilled_data;
+
+          // Use first hook from distilled_data if no stored hook
+          const storedHook = (fetched as any).generated_hook;
+          if (storedHook && storedHook.trim().length > 0) {
+            setHookText(storedHook);
+          } else if (d.hooks && d.hooks.length > 0) {
+            setHookText(d.hooks[0]);
+          } else {
+            // Fallback: generate hook via API (rare)
+            generateHook(fetched, activePersona);
+          }
+
+          // Use gaps from distilled_data directly
+          if (d.gaps && d.gaps.length > 0) {
+            setGaps(d.gaps);
+          }
+
+          // Morph Resume using existing profile
+          const morphed = await morphResume(activePersona, fetched);
+          setMorphedProfile(morphed);
+          return;
+        }
+
+        // 4. If distillation_pending === true and no distilled_data → trigger distillation
+        if (fetched.distillation_pending === true) {
           triggerDistillation(fetched.id, activePersona);
           return; // triggerDistillation will reload job + run the rest
         }
 
-        // Hook: use persisted value if exists, otherwise generate
+        // 5. Fallback path: legacy job without distilled_data (no pending flag)
         const storedHook = (fetched as any).generated_hook;
         if (storedHook && storedHook.trim().length > 0) {
           setHookText(storedHook);
@@ -217,7 +244,6 @@ export default function SeriousModePage({
           generateHook(fetched, activePersona);
         }
 
-        // Gap Analysis: trigger if match_score < 70 and missing_skills is empty/short
         if (
           fetched.match_score < 70 &&
           (!fetched.missing_skills || fetched.missing_skills.length < 3)
@@ -225,7 +251,6 @@ export default function SeriousModePage({
           analyzeGaps(fetched, activePersona);
         }
 
-        // Morph Resume
         const morphed = await morphResume(activePersona, fetched);
         setMorphedProfile(morphed);
       } catch (err) {
@@ -269,10 +294,13 @@ export default function SeriousModePage({
   const scoreColor = getScoreColor(job.match_score);
 
   // Decide what to show in the Skill Gaps section
+  // Priority: distilled_data.gaps (pre-computed) > missing_skills > client-side gaps state
   const displayGaps: string[] =
-    job.missing_skills && job.missing_skills.length >= 3
-      ? job.missing_skills
-      : gaps;
+    job.distilled_data?.gaps && job.distilled_data.gaps.length > 0
+      ? job.distilled_data.gaps
+      : job.missing_skills && job.missing_skills.length >= 3
+        ? job.missing_skills
+        : gaps;
 
   return (
     <div

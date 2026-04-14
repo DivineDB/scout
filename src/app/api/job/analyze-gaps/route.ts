@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { GoogleGenAI, Type } from "@google/genai";
+import Groq from "groq-sdk";
 import { JobPost } from "@/types/job";
 import { Persona } from "@/types/persona";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +14,10 @@ export async function POST(req: Request) {
         { error: "Job and Persona are required." },
         { status: 400 }
       );
+    }
+    
+    if (!groq) {
+      throw new Error("GROQ_API_KEY is missing");
     }
 
     const prompt = `
@@ -33,6 +37,11 @@ export async function POST(req: Request) {
       - Each gap must be 1 sentence max
       - At least 3 gaps, at most 6
       - Do NOT use generic phrases like "lacks experience" without specifics
+      
+      Return ONLY a JSON object exactly like this:
+      {
+        "gaps": ["gap 1 string", "gap 2 string", "gap 3 string"]
+      }
 
       Candidate Profile:
       Name: ${persona.name}
@@ -46,35 +55,20 @@ export async function POST(req: Request) {
       Match Score: ${job.match_score}%
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            gaps: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-              description: "A list of 3-6 specific missing requirements or skill gaps",
-            },
-          },
-          required: ["gaps"],
-        },
-      },
+    const response = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
     });
 
-    if (!response.text) {
-      throw new Error("No output from Gemini.");
-    }
-
-    const parsed = JSON.parse(response.text);
-    const gaps: string[] = parsed.gaps ?? [];
+    const text = response.choices[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(text);
+    const gaps: string[] = Array.isArray(parsed.gaps) ? parsed.gaps : [];
 
     // Enforce minimum 3 items
     if (gaps.length < 3) {
-      throw new Error(`Gemini returned fewer than 3 gaps (got ${gaps.length}). Re-prompting needed.`);
+      throw new Error(`Groq returned fewer than 3 gaps (got ${gaps.length}). Re-prompting needed.`);
     }
 
     return NextResponse.json({ gaps });

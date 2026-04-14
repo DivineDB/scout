@@ -1,10 +1,13 @@
 /**
  * Ghost Scouter Engine — src/lib/ghost.ts
  * Sources: Serper.dev (Google Jobs) + RemoteOK + Remotive
- * Pipeline: Fetch → Hard Gate → Batch AI Score → Upsert → 🦄 Email Alert
+ * Pipeline: Fetch → Stage1 Groq Classify → Stage2 Groq Distill → Upsert → 🦄 Email Alert
  */
 import { createClient } from '@supabase/supabase-js';
-import { GoogleGenAI } from '@google/genai';
+import Groq from 'groq-sdk';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const MAX_DAILY_DISTILLATIONS = 30; // free-tier 70B rate-limit safety cap
 
 // ─── Clients ──────────────────────────────────────────────────────────────────
 function getAdminClient() {
@@ -16,9 +19,10 @@ function getAdminClient() {
   return createClient(url, key);
 }
 
-function getAI() {
-  if (!process.env.GEMINI_API_KEY) throw new Error('[Ghost] Missing GEMINI_API_KEY');
-  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+function getGroq(): Groq {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) throw new Error('[Ghost] Missing GROQ_API_KEY');
+  return new Groq({ apiKey });
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -38,6 +42,14 @@ interface RawJob {
 interface ScoredJob extends RawJob {
   match_score: number;
   match_logic: string;
+}
+
+export interface DistilledData {
+  gaps: string[];
+  hooks: string[];
+  tailored_bullets: string[];
+  match_score?: number;
+  match_logic?: string;
 }
 
 export interface SweepResult {
@@ -81,7 +93,7 @@ async function fetchSerper(roles: string[]): Promise<RawJob[]> {
 
   console.log('[Ghost] Fetching from Serper.dev (Google Jobs)...');
 
-  // ── Constraint 1: Fixed query builder — never append 'engineer' if role implies it
+  // Query sanitizer — never append 'engineer' if the role already implies it
   const queries = roles.map(role => {
     const lower = role.toLowerCase();
     const hasJobKeyword = lower.includes('engineer') || lower.includes('developer') ||
@@ -96,12 +108,12 @@ async function fetchSerper(roles: string[]): Promise<RawJob[]> {
   for (const q of queries) {
     let jobsFetchedForQuery = false;
 
-    // ── Constraint 3: Strict POST to /jobs — only q, gl, hl in body
+    // ── Primary: Strict POST to /jobs
     try {
       const resp = await fetch('https://google.serper.dev/jobs', {
         method: 'POST',
         headers: {
-          'X-API-KEY': process.env.SERPER_API_KEY || '',
+          'X-API-KEY': apiKey,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ q, gl: 'in', hl: 'en' }),
@@ -140,18 +152,20 @@ async function fetchSerper(roles: string[]): Promise<RawJob[]> {
       console.warn(`[Ghost] Serper /jobs request failed for "${q}": ${err}`);
     }
 
-    // ── Constraint 2: ATS fallback dork on /search if /jobs failed
+    // ── ATS fallback dork on /search if /jobs failed (any error or non-ok)
     if (!jobsFetchedForQuery) {
-      // Extract role name without location modifiers for cleaner site dork
+      // Strip location modifiers to get clean role name for the dork
       const cleanRole = q.replace(/ Remote India$/, '').replace(/ Remote$/, '').trim();
-      const dorkQuery = `(site:jobs.lever.co OR site:boards.greenhouse.io OR site:jobs.ashbyhq.com OR site:wellfound.com/jobs) "${cleanRole}" (Remote OR India)`;
-      console.log(`[Ghost] Serper fallback ATS dork: ${dorkQuery}`);
+
+      // Spec-exact dork format: target premium ATS platforms
+      const dorkQuery = `(site:jobs.lever.co OR site:boards.greenhouse.io OR site:jobs.ashbyhq.com) "${cleanRole}" (Remote OR Pune)`;
+      console.log(`[Ghost] Serper ATS fallback dork: ${dorkQuery}`);
 
       try {
         const fallback = await fetch('https://google.serper.dev/search', {
           method: 'POST',
           headers: {
-            'X-API-KEY': process.env.SERPER_API_KEY || '',
+            'X-API-KEY': apiKey,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ q: dorkQuery, gl: 'in', hl: 'en', num: 10 }),
@@ -182,7 +196,7 @@ async function fetchSerper(roles: string[]): Promise<RawJob[]> {
               posted_at: new Date().toISOString(),
               tags: [cleanRole],
               salary_info: undefined,
-              location: 'Remote / India',
+              location: 'Remote / Pune',
               source: 'serper',
             });
           }
@@ -273,52 +287,30 @@ async function fetchRemotive(roles: string[]): Promise<RawJob[]> {
 }
 
 // ─── Filter 1: Hard Gate ──────────────────────────────────────────────────────
-// Constraint 4: Age-only gate — salary check delegated to Gemini AI prompt below
-function passesHardGate(job: RawJob, _salaryMinLPA: number): boolean {
-  // Age: must be < 48 hours old. ATS fallback jobs get a pass (posted_at = now)
+// Age-only gate — salary check is delegated to Stage 1 Groq classifier
+function passesHardGate(job: RawJob): boolean {
   const postedAt = new Date(job.posted_at);
   if (!isNaN(postedAt.getTime())) {
     const hoursOld = (Date.now() - postedAt.getTime()) / 3_600_000;
     if (hoursOld > 48) return false;
   }
-  // Salary filtering is handled by the Gemini batch scorer (see prompt below)
   return true;
 }
 
-// ─── Filter 2: Batch AI Scoring ───────────────────────────────────────────────
-async function batchScoreJobs(
+// ─── Stage 1: Rapid Classification (llama-3.1-8b-instant) ────────────────────
+// Filters out roles paying below 12L or requiring excessive seniority
+async function stage1_classify(
   jobs: RawJob[],
-  profile: Record<string, unknown> | null
-): Promise<ScoredJob[]> {
-  const ai = getAI();
-  const BATCH = 10;
-  const results: ScoredJob[] = [];
+  profileCtx: string,
+  groq: Groq
+): Promise<string[]> {
+  console.log(`[Ghost] Stage 1: Classifying ${jobs.length} jobs with llama-3.1-8b-instant...`);
 
-  const rawSkills = profile?.skills as Record<string, string[]> | null;
-  const skills = rawSkills
-    ? Object.values(rawSkills).flat().filter((s): s is string => typeof s === 'string').slice(0, 20)
-    : ['React', 'Next.js', 'TypeScript', 'Figma', 'Node.js'];
+  const snippets = jobs
+    .map((j, i) => `${i + 1}. ID:${j.external_id} | ${j.title} @ ${j.company} | Tags:${j.tags.join(',')} | ${j.description.substring(0, 200)}`)
+    .join('\n');
 
-  const preferredRoles = (Array.isArray(profile?.preferred_roles) && (profile!.preferred_roles as string[]).length > 0)
-    ? (profile!.preferred_roles as string[]).join(', ')
-    : 'Design Engineer, Full-stack, Frontend';
-
-  const profileCtx = `
-Candidate: ${String(profile?.name ?? 'Divyansh Baghel')} | 2025 CS Graduate | India
-Target roles: ${preferredRoles}
-Key skills: ${skills.join(', ')}
-Salary target: ${String(profile?.salary_min ?? 12)}L–${String(profile?.salary_ideal ?? 18)}L INR LPA
-Work preference: Remote / Hybrid
-  `.trim();
-
-  for (let i = 0; i < jobs.length; i += BATCH) {
-    const batch = jobs.slice(i, i + BATCH);
-    const snippets = batch
-      .map((j, k) => `${k + 1}. ID:${j.external_id} | ${j.title} @ ${j.company} | Tags:${j.tags.join(',')} | ${j.description.substring(0, 200)}`)
-      .join('\n');
-
-    // Constraint 4: Gemini enforces salary gate — rejects roles clearly below 12L
-    const prompt = `You are a senior technical recruiter evaluating job fit for an Indian candidate. Respond ONLY with a valid JSON array — no markdown, no prose.
+  const prompt = `You are a strict recruiter screening jobs for an Indian candidate.
 
 Candidate Profile:
 ${profileCtx}
@@ -326,40 +318,99 @@ ${profileCtx}
 Job Listings:
 ${snippets}
 
-Return exactly ${batch.length} objects in order:
-[{"id":"<external_id>","match_score":<0-100>,"logic":"<one crisp sentence>"}]
+Return a JSON object with a single key "qualifying_ids" containing an array of external_id strings for ONLY the jobs that meet ALL these criteria:
+1. Salary appears to be at or above ₹12L LPA (if disclosed). If salary is NOT mentioned, include the job (don't penalize).
+2. Seniority is Entry-level, Mid-level, or unspecified — NOT "Senior 5+ years", "Lead", "Principal", "Director".
+3. Role matches the candidate's target: Design Engineer, Full-stack, Frontend, or AI Engineer.
 
-Scoring criteria:
-- 90–100 (🦄 Unicorn): Role, seniority, remote/India, skills, and salary all align perfectly
-- 80–89 (Strong): Good fit, minor gaps only
-- 70–79 (Fair): Relevant role but noticeable mismatches (location, stack, level)
-- <70 (Skip): Weak match — wrong domain, over/under-qualified, or clearly below 12L INR LPA
+Return ONLY valid JSON in this exact format:
+{"qualifying_ids": ["<id1>", "<id2>"]}`;
 
-CRITICAL SALARY RULE: If the job description or title clearly indicates a salary BELOW ₹12L LPA (e.g., it's a junior/internship/fresher role in a Tier-3 city with no remote option and low pay signals), assign a score below 70. When salary cannot be determined, do NOT penalise — default to assuming it meets the threshold.`;
+  try {
+    const response = await groq.chat.completions.create({
+      model: 'llama-3.1-8b-instant',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      temperature: 0.1,
+    });
 
-    try {
-      const resp = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: { responseMimeType: 'application/json' },
-      });
-
-      const parsed: { id: string; match_score: number; logic: string }[] = JSON.parse(resp.text ?? '[]');
-      for (const entry of parsed) {
-        const job = batch.find(j => j.external_id === entry.id);
-        if (job && entry.match_score >= 80) {
-          results.push({ ...job, match_score: entry.match_score, match_logic: entry.logic ?? '' });
-        }
-      }
-      console.log(`[Ghost] Batch ${Math.floor(i / BATCH) + 1}: ${parsed.filter(e => e.match_score >= 80).length} qualified`);
-    } catch (err) {
-      console.error(`[Ghost] Batch ${Math.floor(i / BATCH) + 1} failed:`, err);
-    }
-
-    if (i + BATCH < jobs.length) await new Promise(r => setTimeout(r, 800));
+    const text = response.choices[0]?.message?.content ?? '{}';
+    const parsed = JSON.parse(text) as { qualifying_ids?: string[] };
+    const ids = Array.isArray(parsed.qualifying_ids) ? parsed.qualifying_ids : [];
+    console.log(`[Ghost] Stage 1: ${ids.length}/${jobs.length} jobs passed classification`);
+    return ids;
+  } catch (err) {
+    console.error('[Ghost] Stage 1 classification failed:', err);
+    // Fallback: pass all jobs through
+    return jobs.map(j => j.external_id);
   }
+}
 
-  return results;
+// ─── Stage 2: Deep Distillation (llama-3.3-70b-versatile) ────────────────────
+// Generates the full Scout Report for a single job
+async function stage2_distill(
+  job: RawJob,
+  profileCtx: string,
+  groq: Groq
+): Promise<{ distilled: DistilledData; match_score: number; match_logic: string }> {
+  const prompt = `You are an elite technical recruiter and career coach. Generate a complete Scout Report for this job application.
+
+Candidate Profile:
+${profileCtx}
+
+Job:
+Title: ${job.title}
+Company: ${job.company}
+Location: ${job.location}
+Tags: ${job.tags.join(', ')}
+Description: ${job.description}
+
+Return a JSON object with EXACTLY these keys:
+{
+  "match_score": <integer 0-100>,
+  "match_logic": "<one crisp sentence explaining the score>",
+  "gaps": ["<skill or experience gap 1>", "<gap 2>", ...],
+  "hooks": ["<personalised outreach opening line 1>", "<variation 2>", "<variation 3>"],
+  "tailored_bullets": ["<ATS-optimised resume bullet 1 that maps candidate's experience to this JD>", ...]
+}
+
+Scoring guide:
+- 90–100: Perfect alignment (role, stack, remote/India, salary, seniority)
+- 80–89: Strong fit, minor gaps
+- 70–79: Relevant but noticeable mismatches
+- <70: Weak match
+
+For gaps: list specific missing skills or experience. If none, return empty array.
+For hooks: write 3 genuine, specific opening lines referencing the company or role. NOT generic templates.
+For tailored_bullets: write 3 bullets in STAR format using candidate's known experience, optimised for this JD's keywords.`;
+
+  const response = await groq.chat.completions.create({
+    model: 'llama-3.3-70b-versatile',
+    messages: [{ role: 'user', content: prompt }],
+    response_format: { type: 'json_object' },
+    temperature: 0.3,
+  });
+
+  const text = response.choices[0]?.message?.content ?? '{}';
+  const parsed = JSON.parse(text) as {
+    match_score?: number;
+    match_logic?: string;
+    gaps?: string[];
+    hooks?: string[];
+    tailored_bullets?: string[];
+  };
+
+  return {
+    match_score: Math.min(100, Math.max(0, Number(parsed.match_score ?? 70))),
+    match_logic: String(parsed.match_logic ?? ''),
+    distilled: {
+      gaps: Array.isArray(parsed.gaps) ? parsed.gaps : [],
+      hooks: Array.isArray(parsed.hooks) ? parsed.hooks : [],
+      tailored_bullets: Array.isArray(parsed.tailored_bullets) ? parsed.tailored_bullets : [],
+      match_score: Number(parsed.match_score ?? 70),
+      match_logic: String(parsed.match_logic ?? ''),
+    },
+  };
 }
 
 // ─── Step 7: 🦄 Unicorn Email Alert ──────────────────────────────────────────
@@ -387,7 +438,7 @@ async function sendUnicornAlert(job: ScoredJob, email: string): Promise<void> {
     <p style="color:#A1A1AA;font-size:14px;margin:0 0 14px">${job.company} · ${job.location}</p>
     <p style="color:#71717A;font-size:13px;line-height:1.6;margin:0;border-top:1px solid rgba(255,255,255,0.06);padding-top:12px">${job.match_logic}</p>
   </div>
-  <a href="${job.url}" style="display:inline-block;background:#00FFC2;color:#050505;font-weight:800;padding:14px 28px;border-radius:10px;text-decoration:none;font-size:14px">View & Apply Now →</a>
+  <a href="${job.url}" style="display:inline-block;background:#00FFC2;color:#050505;font-weight:800;padding:14px 28px;border-radius:10px;text-decoration:none;font-size:14px">View &amp; Apply Now →</a>
   <p style="color:#27272A;font-size:11px;margin-top:28px;line-height:1.5">Auto-scouted by your Ghost Engine · Scout App<br>Next sweep: tomorrow 9:00 AM IST</p>
 </div>`,
     });
@@ -426,6 +477,7 @@ async function logSweep(opts: {
 export async function conductGlobalSweep(): Promise<SweepResult> {
   console.log('\n[Ghost] 👻 ════════════ Global Sweep Starting ════════════');
   const admin = getAdminClient();
+  const groq = getGroq();
 
   // Get profile
   const { data: profile } = await admin
@@ -439,6 +491,20 @@ export async function conductGlobalSweep(): Promise<SweepResult> {
   const roles: string[]      = (Array.isArray(profile?.preferred_roles) && (profile!.preferred_roles as string[]).length > 0)
     ? (profile!.preferred_roles as string[])
     : ['Design Engineer', 'Full-stack', 'Frontend'];
+
+  const rawSkills = profile?.skills as Record<string, string[]> | null;
+  const skills = rawSkills
+    ? Object.values(rawSkills).flat().filter((s): s is string => typeof s === 'string').slice(0, 20)
+    : ['React', 'Next.js', 'TypeScript', 'Figma', 'Node.js'];
+
+  const preferredRoles = roles.join(', ');
+  const profileCtx = `
+Candidate: ${String(profile?.name ?? 'Divyansh Baghel')} | 2025 CS Graduate | India
+Target roles: ${preferredRoles}
+Key skills: ${skills.join(', ')}
+Salary target: ${String(salaryMin ?? 12)}L–${String(profile?.salary_ideal ?? 18)}L INR LPA
+Work preference: Remote / Hybrid
+  `.trim();
 
   console.log(`[Ghost] Roles: ${roles.join(', ')} | Salary floor: ₹${salaryMin}L`);
 
@@ -468,69 +534,110 @@ export async function conductGlobalSweep(): Promise<SweepResult> {
   });
   console.log(`[Ghost] ${deduped.length} unique jobs from all sources`);
 
-  // ── STEP 4: Hard Gate filter
-  const filtered = deduped.filter(j => passesHardGate(j, salaryMin));
-  console.log(`[Ghost] ${filtered.length} passed hard gate (age + salary)`);
+  // ── STEP 4: Hard Gate filter (age only)
+  const gated = deduped.filter(j => passesHardGate(j));
+  console.log(`[Ghost] ${gated.length} passed hard gate (age < 48h)`);
 
-  if (filtered.length === 0) {
+  if (gated.length === 0) {
     await logSweep({ query: roles.join(','), jobs_found: deduped.length, jobs_saved: 0, high_matches: 0, status: 'success' });
     return { jobs_found: deduped.length, jobs_filtered: 0, jobs_saved: 0, top_matches: 0 };
   }
 
-  // ── STEP 5: Batch AI scoring
-  console.log(`[Ghost] Scoring ${filtered.length} jobs with Gemini...`);
-  const scored = await batchScoreJobs(filtered, profile as Record<string, unknown> | null);
-  console.log(`[Ghost] ${scored.length} jobs scored 80%+`);
+  // ── STEP 5: Stage 1 — Rapid Classification (8B model)
+  const qualifyingIds = await stage1_classify(gated, profileCtx, groq);
+  const classified = gated.filter(j => qualifyingIds.includes(j.external_id));
+  console.log(`[Ghost] ${classified.length} jobs passed Stage 1 classification`);
 
-  // ── STEP 6: Persist to Supabase
+  if (classified.length === 0) {
+    await logSweep({ query: roles.join(','), jobs_found: deduped.length, jobs_saved: 0, high_matches: 0, status: 'success' });
+    return { jobs_found: deduped.length, jobs_filtered: gated.length, jobs_saved: 0, top_matches: 0 };
+  }
+
+  // ── STEP 6: Stage 2 — Deep Distillation (70B model, rate-limited)
+  // Cap at MAX_DAILY_DISTILLATIONS to respect free-tier limits
+  const toDistill = classified.slice(0, MAX_DAILY_DISTILLATIONS);
+  console.log(`[Ghost] Stage 2: Distilling ${toDistill.length} jobs with llama-3.3-70b-versatile...`);
+
   let saved = 0;
   const unicorns: ScoredJob[] = [];
 
-  for (const job of scored) {
+  for (let i = 0; i < toDistill.length; i++) {
+    const job = toDistill[i];
+    console.log(`[Ghost] Distilling ${i + 1}/${toDistill.length}: ${job.title} @ ${job.company}`);
+
+    let distilledData: DistilledData | null = null;
+    let matchScore = 70;
+    let matchLogic = '';
+
+    try {
+      const result = await stage2_distill(job, profileCtx, groq);
+      distilledData = result.distilled;
+      matchScore = result.match_score;
+      matchLogic = result.match_logic;
+      console.log(`[Ghost] ✓ ${job.title}: ${matchScore}% match`);
+    } catch (err) {
+      console.error(`[Ghost] Stage 2 failed for "${job.title}":`, err);
+      // Persist the job stub with pending=true if distillation failed
+    }
+
+    // ── Check for duplicate
     try {
       const { data: dup } = await admin
         .from('jobs')
         .select('id')
         .eq('apply_url', job.url)
         .maybeSingle();
+
       if (dup) {
         console.log(`[Ghost] Skip duplicate: ${job.title}`);
+        // Still apply 3s delay before next distillation
+        if (i < toDistill.length - 1) await new Promise(r => setTimeout(r, 3000));
         continue;
       }
+    } catch { /* proceed with insert */ }
 
+    // ── Upsert to Supabase
+    try {
       const { error } = await admin.from('jobs').insert({
-        company:            { name: job.company, size: 'Startup', industry: 'Technology' },
-        role:               job.title,
-        experience_level:   'Entry-level',
-        job_type:           'Full-time',
-        pay:                { min: 0, max: 0, currency: 'INR' },
-        remote_status:      'Remote',
-        location:           job.location || 'Remote',
-        tech_stack:         job.tags.slice(0, 10),
-        match_score:        job.match_score,
-        match_explanation:  job.match_logic,
-        missing_skills:     [],
-        description:        job.description,
-        responsibilities:   [],
-        requirements:       [],
-        apply_url:          job.url,
-        posted_at:          job.posted_at,
-        is_active:          true,
-        tags:               job.tags,
-        status:             'casual',
-        distillation_pending: true,
-        source:             job.source,
-        snippet:            job.description,
+        company:              { name: job.company, size: 'Startup', industry: 'Technology' },
+        role:                 job.title,
+        experience_level:     'Entry-level',
+        job_type:             'Full-time',
+        pay:                  { min: 0, max: 0, currency: 'INR' },
+        remote_status:        'Remote',
+        location:             job.location || 'Remote',
+        tech_stack:           job.tags.slice(0, 10),
+        match_score:          matchScore,
+        match_explanation:    matchLogic,
+        missing_skills:       distilledData?.gaps?.slice(0, 5) ?? [],
+        description:          job.description,
+        responsibilities:     distilledData?.tailored_bullets?.slice(0, 3) ?? [],
+        requirements:         [],
+        apply_url:            job.url,
+        posted_at:            job.posted_at,
+        is_active:            true,
+        tags:                 job.tags,
+        status:               'casual',
+        distillation_pending: distilledData === null, // false if distilled, true if failed
+        distilled_data:       distilledData,          // null if distillation failed
+        source:               job.source,
+        snippet:              job.description,
       });
 
       if (!error) {
         saved++;
-        if (job.match_score >= 95) unicorns.push(job);
+        if (matchScore >= 95) unicorns.push({ ...job, match_score: matchScore, match_logic: matchLogic });
+        console.log(`[Ghost] ✓ Saved: ${job.title} | score=${matchScore} | distilled=${!!distilledData}`);
       } else {
         console.warn('[Ghost] Insert error:', error.message);
       }
     } catch (err) {
       console.warn('[Ghost] Save error:', err);
+    }
+
+    // ── 3s delay between 70B requests (free-tier safety)
+    if (i < toDistill.length - 1) {
+      await new Promise(r => setTimeout(r, 3000));
     }
   }
 
@@ -551,5 +658,5 @@ export async function conductGlobalSweep(): Promise<SweepResult> {
   });
 
   console.log('[Ghost] 👻 ════════════ Sweep Complete ════════════\n');
-  return { jobs_found: deduped.length, jobs_filtered: filtered.length, jobs_saved: saved, top_matches: unicorns.length };
+  return { jobs_found: deduped.length, jobs_filtered: classified.length, jobs_saved: saved, top_matches: unicorns.length };
 }

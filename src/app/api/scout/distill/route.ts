@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchJobPage, fetchCompanyIntel, distillJobData } from "@/lib/scout";
 import { supabaseAdmin } from "@/lib/supabase";
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 /**
  * POST /api/scout/distill

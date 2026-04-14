@@ -17,7 +17,10 @@ async function main() {
     `   Supabase: ${(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) ? '✅' : '❌ MISSING'}`
   );
   console.log(
-    `   Gemini:   ${(process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY) ? '✅' : '❌ MISSING'}`
+    `   Groq:     ${process.env.GROQ_API_KEY ? '✅' : '❌ MISSING'}`
+  );
+  console.log(
+    `   Serper:   ${process.env.SERPER_API_KEY ? '✅' : '⚠️  not set (Google Jobs disabled)'}`
   );
   console.log(
     `   Resend:   ${process.env.RESEND_API_KEY ? '✅' : '⚠️  not set (email disabled)'}`
@@ -26,10 +29,10 @@ async function main() {
   try {
     const result = await conductGlobalSweep();
     console.log('\n✅ Sweep complete:');
-    console.log(`   Jobs found  : ${result.jobs_found}`);
+    console.log(`   Jobs found   : ${result.jobs_found}`);
     console.log(`   Jobs filtered: ${result.jobs_filtered}`);
-    console.log(`   Jobs saved  : ${result.jobs_saved}`);
-    console.log(`   Top matches : ${result.top_matches}`);
+    console.log(`   Jobs saved   : ${result.jobs_saved}`);
+    console.log(`   Top matches  : ${result.top_matches}`);
     process.exit(0);
   } catch (err) {
     console.error('\n❌ Sweep failed:', err);

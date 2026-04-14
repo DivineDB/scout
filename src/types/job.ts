@@ -2,6 +2,23 @@
 // Scout – Job Post Type Definitions
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Pre-computed AI analysis stored in Supabase `distilled_data` JSONB column.
+ * Produced by Stage 2 (llama-3.3-70b-versatile) of the Ghost pipeline.
+ */
+export interface DistilledData {
+  /** Skill gaps between job requirements and candidate profile */
+  gaps: string[];
+  /** Personalised outreach hooks for the role */
+  hooks: string[];
+  /** ATS-optimised bullet points mapped from candidate's experience */
+  tailored_bullets: string[];
+  /** Refined match score from the 70B model (0–100) */
+  match_score?: number;
+  /** One-sentence match rationale */
+  match_logic?: string;
+}
+
 export type RemoteStatus = "Remote" | "Hybrid" | "On-site";
 
 export type ExperienceLevel =
@@ -111,4 +128,16 @@ export interface JobPost {
 
   /** True when user profile changed and match_score needs re-validation */
   match_stale?: boolean;
+
+  /** Pre-computed Ghost AI analysis (Stage 2 — 70B distillation) */
+  distilled_data?: DistilledData | null;
+
+  /**
+   * True when the job stub was inserted but the 70B distillation hasn't run yet.
+   * Set to false once distilled_data is populated.
+   */
+  distillation_pending?: boolean;
+
+  /** Job source: 'serper' | 'remoteok' | 'remotive' | 'manual' */
+  source?: string;
 }

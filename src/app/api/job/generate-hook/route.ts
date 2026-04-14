@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
+import Groq from "groq-sdk";
 import { JobPost } from "@/types/job";
 import { Persona } from "@/types/persona";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const groq = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +14,10 @@ export async function POST(req: Request) {
         { error: "Job and Persona are required." },
         { status: 400 }
       );
+    }
+
+    if (!groq) {
+      throw new Error("GROQ_API_KEY is missing");
     }
 
     const prompt = `
@@ -28,27 +32,31 @@ export async function POST(req: Request) {
       1. Open with a sharp, specific technical observation about ${job.company.name}'s product, stack (${job.tech_stack.slice(0, 4).join(", ")}), or the ${job.company.industry} domain.
       2. Reference a specific project (e.g., POS system, Crawler, or Kindly.ai) as it relates to the JD and connect it to a concrete problem you solved.
       3. Close with one crisp sentence on why this role is the logical next move for you technically.
+      
+      Return ONLY a JSON object exactly like this:
+      {
+        "hook": "string representing the outreach hook"
+      }
 
       Persona Experience (pick the most relevant project, do not invent new ones):
       ${JSON.stringify(persona.experience_details, null, 2)}
-
-      Output ONLY the hook text. No greeting, no sign-off, no subject line.
     `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-      config: {
-        maxOutputTokens: 180,
-        temperature: 0.6,
-      },
+    const response = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.6,
     });
 
-    if (!response.text) {
-      throw new Error("No output generated from Gemini.");
+    const text = response.choices[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(text);
+    
+    if (!parsed.hook) {
+      throw new Error("No output generated from Groq.");
     }
 
-    const hook = response.text.replace(/^"|"$/g, "").trim();
+    const hook = String(parsed.hook).trim();
 
     return NextResponse.json({ hook });
   } catch (error) {

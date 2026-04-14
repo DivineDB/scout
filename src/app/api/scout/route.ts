@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
-import { fetchJobPage, fetchCompanyIntel, distillJobData } from "@/lib/scout";
+import { fetchJobPage, fetchCompanyIntel, distillJobData, extractCompanyName } from "@/lib/scout";
 import { supabaseAdmin } from "@/lib/supabase";
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export async function POST(req: Request) {
   try {
@@ -23,16 +20,7 @@ export async function POST(req: Request) {
 
     // ── Step 2: Extract company name (lightweight call) ───────────────────────
     console.log(`[Scout] Extracting company name...`);
-    let companyName = "Unknown Company";
-    try {
-      const companyResponse = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: `Extract the primary company name hiring for this job from the raw text. Return ONLY the company name as a string, nothing else.\n\nText: ${rawText.substring(0, 4000)}`
-      });
-      companyName = companyResponse.text?.trim() || "Unknown Company";
-    } catch (e) {
-      console.warn("[Scout] Company extraction failed, using fallback:", e);
-    }
+    const companyName = await extractCompanyName(rawText);
 
     // ── Step 3: Save a RAW STUB to Supabase immediately ───────────────────────
     // This guarantees a real UUID is created even if Gemini distillation fails.
