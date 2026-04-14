@@ -96,7 +96,7 @@ async function fetchSerper(roles: string[]): Promise<RawJob[]> {
           'X-API-KEY': apiKey,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ q, gl: 'in', hl: 'en', num: 30 }),
+        body: JSON.stringify({ q, gl: 'in', hl: 'en' }),
         signal: AbortSignal.timeout(12000),
       });
 
