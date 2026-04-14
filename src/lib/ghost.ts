@@ -158,7 +158,7 @@ async function fetchSerper(roles: string[]): Promise<RawJob[]> {
       const cleanRole = q.replace(/ Remote India$/, '').replace(/ Remote$/, '').trim();
 
       // Spec-exact dork format: target premium ATS platforms
-      const dorkQuery = `(site:jobs.lever.co OR site:boards.greenhouse.io OR site:jobs.ashbyhq.com) "${cleanRole}" (Remote OR Pune)`;
+      const dorkQuery = `(site:jobs.lever.co OR site:boards.greenhouse.io OR site:jobs.ashbyhq.com) "${cleanRole}" ("Remote India" OR "Anywhere" OR Pune)`;
       console.log(`[Ghost] Serper ATS fallback dork: ${dorkQuery}`);
 
       try {
@@ -322,6 +322,7 @@ Return a JSON object with a single key "qualifying_ids" containing an array of e
 1. Salary appears to be at or above ₹12L LPA (if disclosed). If salary is NOT mentioned, include the job (don't penalize).
 2. Seniority is Entry-level, Mid-level, or unspecified — NOT "Senior 5+ years", "Lead", "Principal", "Director".
 3. Role matches the candidate's target: Design Engineer, Full-stack, Frontend, or AI Engineer.
+4. If the job description explicitly states 'US Only', 'Remote (US)', 'North America Only', or requires US/EU work authorization/visas, you MUST reject the job and set match_score to 0. Only accept roles that are truly global 'Work from Anywhere', explicitly 'Remote India', or located in Pune, India.
 
 Return ONLY valid JSON in this exact format:
 {"qualifying_ids": ["<id1>", "<id2>"]}`;
@@ -381,8 +382,8 @@ Scoring guide:
 - <70: Weak match
 
 For gaps: list specific missing skills or experience. If none, return empty array.
-For hooks: write 3 genuine, specific opening lines referencing the company or role. NOT generic templates.
-For tailored_bullets: write 3 bullets in STAR format using candidate's known experience, optimised for this JD's keywords.`;
+For hooks: Do not write generic hooks like 'I am impressed by your company.' Generate a 'Kinetic Hook' (max 3 sentences). It must reference a specific technology or problem mentioned in the JD, and tie it directly to my background as a Design Engineer building AI SaaS (e.g., mention my experience building agents with Next.js/Prisma or UI/UX). It must read like a sharp, direct message to a technical hiring manager.
+For tailored_bullets: Generate 3 highly tailored bullet points for my resume based on this specific JD. Do not just summarize the job. You must rewrite my existing project experience (building 'Kindly.ai', the 'StayReach' dashboard, and the 'Shift' task manager) to perfectly align with the keywords and requirements of this role.`;
 
   const response = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',

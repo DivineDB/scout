@@ -195,12 +195,9 @@ export function Sidebar() {
   return (
     <aside
       id="scout-sidebar"
-      className="glass-dark fixed inset-y-0 left-0 z-40 flex w-16 flex-col items-center pt-8 pb-5"
+      className="glass dark:glass-dark fixed inset-y-0 left-0 z-40 flex w-16 flex-col items-center pt-8 pb-5"
       style={{
         borderRight: "1px solid var(--border-default)",
-        background: "rgba(5, 5, 5, 0.92)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
       }}
     >
       {/* Logo */}
