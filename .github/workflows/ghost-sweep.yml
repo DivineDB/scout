@@ -26,9 +26,10 @@ jobs:
 
       - name: Run Ghost Scouter
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # Handle both standard and NEXT_PUBLIC variations just in case
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SERVICE_ROLE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || secrets.GOOGLE_AI_API_KEY }}
           SERPER_API_KEY: ${{ secrets.SERPER_API_KEY }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
