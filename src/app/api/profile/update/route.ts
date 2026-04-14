@@ -14,6 +14,9 @@ export interface ProfileUpdate {
   contact_email?: string;
   contact_phone?: string;
   experience_details?: Record<string, any>[];
+  // FilterBar ghost targeting fields
+  preferred_roles?: string[];
+  preferred_location?: string[];
 }
 
 /**
@@ -60,6 +63,10 @@ export async function POST(req: Request) {
       salary_ideal: body.salary_ideal ?? null,
       updated_at: new Date().toISOString(),
     };
+
+    // FilterBar ghost targeting fields
+    if (body.preferred_roles !== undefined)   payload.preferred_roles   = body.preferred_roles;
+    if (body.preferred_location !== undefined) payload.preferred_location = body.preferred_location;
 
     // Store experience_details inside the existing skills JSONB column to avoid Postgres schema migrations
     if (body.skills || body.experience_details) {

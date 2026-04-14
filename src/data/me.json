@@ -47,11 +47,11 @@
     }
   ],
   "preferences": {
-    "preferred_roles": ["Frontend Engineer", "Full-Stack Developer", "UI Engineer", "AI Product Engineer"],
+    "preferred_roles": ["Design Engineer", "Full-Stack Developer", "UI Engineer", "AI Product Engineer"],
     "work_type": ["Remote", "Hybrid"],
     "desired_pay_inr_lpa": {
-      "min": 8,
-      "ideal": 14
+      "min": 12,
+      "ideal": 18
     },
     "preferred_company_size": ["Startup", "Mid-size"],
     "willing_to_relocate": false

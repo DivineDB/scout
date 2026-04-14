@@ -1,0 +1,33 @@
+name: 👻 Ghost Scouter Sweep
+
+on:
+  schedule:
+    # 9:00 AM IST = 03:30 UTC daily
+    - cron: '30 3 * * *'
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  ghost-sweep:
+    name: Run Ghost Sweep
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Ghost Scouter
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: npx tsx src/scripts/ghost-runner.ts
