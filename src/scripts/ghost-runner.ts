@@ -9,7 +9,7 @@ async function main() {
   console.log('👻 Scout Ghost Runner starting...');
   console.log(`   Time: ${new Date().toISOString()}`);
   console.log(
-    `   Supabase: ${process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅' : '❌ MISSING'}`
+    `   Supabase: ${(process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) ? '✅' : '❌ MISSING'}`
   );
   console.log(
     `   Gemini:   ${process.env.GEMINI_API_KEY ? '✅' : '❌ MISSING'}`

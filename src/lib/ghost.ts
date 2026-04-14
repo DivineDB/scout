@@ -8,9 +8,9 @@ import { GoogleGenAI } from '@google/genai';
 
 // ─── Clients ──────────────────────────────────────────────────────────────────
 function getAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-  if (!url || !key) throw new Error('[Ghost] Missing Supabase env vars');
+  if (!url || !key) throw new Error('[Ghost] Missing Supabase env vars (SUPABASE_URL/SERVICE_ROLE_KEY)');
   return createClient(url, key);
 }
 
