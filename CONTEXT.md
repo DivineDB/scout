@@ -5,7 +5,8 @@ Designed to cut through the noise, distil signal, and target high-pay remote rol
 ## Current Progress & Status
 - **Status**: Mission 7.0 — The Ghost Scouter — COMPLETE.
 - **Features Implemented**: 
-  - **Ghost Scouter MVP** *(7.0)*: Built a background worker using Serper.dev, RemoteOK, and Remotive + Gemini 2.5 Flash batch scoring. Triggers daily via Vercel Cron. Inserts high-match jobs directly into the `casual` queue. Fires 🦄 Unicorn email alerts via Resend for 95%+ matches.
+  - **Mission 7 Patch: Ghost Blindness Fix** *(7.04)*: Fixed Serper query logic to avoid double 'engineer' keywords. Relaxed Hard Gate by temporarily disabling salary filters for higher ingestion volume from RemoteOK/Remotive. Added raw response logging for debugging.
+  - **Ghost Scouter MVP** *(7.01)*: Built a background worker using Serper.dev, RemoteOK, and Remotive + Gemini 2.5 Flash batch scoring. Triggers daily via Vercel Cron. Inserts high-match jobs directly into the `casual` queue. Fires 🦄 Unicorn email alerts via Resend for 95%+ matches.
   - **FilterBar & Ghost Status** *(7.0)*: Added a persistent, dynamic FilterBar in Casual Browse that syncs targeted roles, location, and salary to Supabase. Added Real-time Ghost 👻 indicator in Sidebar with hover stats.
   - **Experience Details Persistence** *(6.18)*: Added `experience_details` column to `user_profile` table and integrated it into the Resume Command Center for persistent Career Story editing.
   - **Gemini 2.5 Model Migration** *(6.18)*: Upgraded all AI pipelines to use `gemini-2.5` models to handle higher complexity and resolve rate-limiting issues on legacy endpoints.

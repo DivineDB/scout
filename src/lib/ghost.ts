@@ -80,9 +80,10 @@ async function fetchSerper(roles: string[]): Promise<RawJob[]> {
   }
 
   console.log('[Ghost] Fetching from Serper.dev (Google Jobs)...');
-  const queries = roles.map(role =>
-    `${role} engineer Remote India`
-  );
+  const queries = roles.map(role => {
+    const isEngineer = role.toLowerCase().includes('engineer');
+    return isEngineer ? `${role} Remote India` : `${role} engineer Remote India`;
+  });
 
   const allJobs: RawJob[] = [];
   const seen = new Set<string>();
@@ -104,7 +105,16 @@ async function fetchSerper(roles: string[]): Promise<RawJob[]> {
         continue;
       }
 
-      const data = await resp.json();
+      const rawText = await resp.text();
+      console.log(`[Ghost] Serper raw resp (20 chars): ${rawText.substring(0, 20)}`);
+      
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (e) {
+        console.warn('[Ghost] Failed to parse Serper response:', e);
+        continue;
+      }
       if (!Array.isArray(data?.jobs)) continue;
 
       for (const job of data.jobs) {
@@ -216,6 +226,7 @@ function passesHardGate(job: RawJob, salaryMinLPA: number): boolean {
   }
 
   // Salary gate (USD → LPA, soft — only reject if salary is clearly too low)
+  /*
   if (job.salary_info) {
     const m = job.salary_info.match(/\$?([\d,]+)/);
     if (m) {
@@ -224,6 +235,7 @@ function passesHardGate(job: RawJob, salaryMinLPA: number): boolean {
       if (lpa > 0 && lpa < salaryMinLPA) return false;
     }
   }
+  */
 
   return true;
 }
