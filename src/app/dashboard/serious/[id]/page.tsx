@@ -10,7 +10,7 @@ import { ResumeTemplate } from "@/components/ResumeTemplate";
 import { ClientOnly } from "@/components/ClientOnly";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Loader2, FileDown, Copy, Check } from "lucide-react";
+import { ArrowLeft, Loader2, FileDown, Copy, Check, Trash2 } from "lucide-react";
 import { formatSalary } from "@/lib/format-salary";
 import { supabase } from "@/lib/supabase";
 import meData from "@/data/me.json";
@@ -68,6 +68,7 @@ export default function SeriousModePage({
   const [morphedProfile, setMorphedProfile] = useState<any>(null);
   const [gaps, setGaps] = useState<string[]>([]);
   const [gapsLoading, setGapsLoading] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   // ── Persist hook to Supabase ────────────────────────────────────────────────
   async function persistHook(jobId: string, hook: string) {
@@ -166,6 +167,31 @@ export default function SeriousModePage({
       setTimeout(() => setHookCopied(false), 2000);
     } catch {
       toast.error("Failed to copy.");
+    }
+  };
+
+  // ── Remove job ────────────────────────────────────────────────────────────
+  const removeJob = async () => {
+    if (!job?.id) return;
+    setIsRemoving(true);
+    const toastId = toast.loading("Removing job...");
+    try {
+      const res = await fetch("/api/job/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: job.id, updates: { status: "removed" } }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(`Error: ${data.error || "Unknown error"}`, { id: toastId });
+        return;
+      }
+      toast.success("Job removed", { id: toastId });
+      router.push("/dashboard/serious");
+    } catch (err: any) {
+      toast.error(`Unexpected error: ${err?.message ?? String(err)}`, { id: toastId });
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -332,11 +358,22 @@ export default function SeriousModePage({
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <span
-            className="font-bold text-xs tracking-widest uppercase"
+            className="flex-1 font-bold text-xs tracking-widest uppercase"
             style={{ color: "#00FFC2" }}
           >
             Serious Mode
           </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={removeJob}
+            disabled={isRemoving}
+            className="h-8 w-8 transition-colors hover:bg-red-500/10 hover:text-red-500"
+            style={{ color: "#EF4444", background: "rgba(239, 68, 68, 0.05)" }}
+            title="Remove Job"
+          >
+            {isRemoving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+          </Button>
         </div>
 
         {/* Scrollable body */}

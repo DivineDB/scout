@@ -57,6 +57,7 @@ export function JobInsightSheet({
   const router = useRouter();
   const [isPromoting, setIsPromoting] = useState(false);
   const [isRedistilling, setIsRedistilling] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   if (!job) return null;
 
@@ -127,6 +128,36 @@ export function JobInsightSheet({
       toast.error(`Unexpected error: ${err?.message ?? String(err)}`, { id: toastId });
     } finally {
       setIsPromoting(false);
+    }
+  };
+
+  const removeJob = async () => {
+    const jobId = job?.id;
+    if (!jobId || typeof jobId !== "string" || jobId.trim() === "") return;
+
+    setIsRemoving(true);
+    const toastId = toast.loading("Removing job...");
+
+    try {
+      const res = await fetch("/api/job/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId, updates: { status: "removed" } }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(`Error: ${data.error || "Unknown error"}`, { id: toastId });
+        return;
+      }
+
+      toast.success("Job removed", { id: toastId });
+      onClose();
+      router.refresh();
+    } catch (err: any) {
+      toast.error(`Unexpected error: ${err?.message ?? String(err)}`, { id: toastId });
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -372,6 +403,20 @@ export function JobInsightSheet({
                 </>
               ) : (
                 "🚀 Promote to Serious Mode"
+              )}
+            </button>
+            <button
+              disabled={isRemoving}
+              className="w-full flex items-center justify-center gap-2 rounded-xl py-2 mt-1 text-xs font-bold transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{
+                color: "#EF4444",
+              }}
+              onClick={removeJob}
+            >
+              {isRemoving ? (
+                <><Loader2 size={14} className="animate-spin" /> Removing…</>
+              ) : (
+                "🗑️ Remove Job"
               )}
             </button>
           </div>
