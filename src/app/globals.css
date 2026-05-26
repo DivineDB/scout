@@ -4,230 +4,241 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ───────────────────────────────────────────────────────────────────────────
-   SCOUT — "Calm Tech" Light Palette
-   ─────────────────────────────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCOUT — "Obsidian Mint" Design System  ·  v1.0
+   ──────────────────────────────────────────────────────────────────────────
+   Always dark. No light mode. No toggles.
+   The single source of truth for every visual token in the app.
+   ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-  /* Base shadcn tokens for Light mode */
-  --background:           #FBFBFB;
-  --foreground:           #0F172A; /* Slate-900 */
-  --card:                 #FFFFFF;
-  --card-foreground:      #0F172A;
-  --popover:              #FFFFFF;
-  --popover-foreground:   #0F172A;
-  --primary:              #00FFC2; /* Carbon Mint */
-  --primary-foreground:   #0F172A; /* Slate-900 */
-  --secondary:            #F1F5F9; /* Slate-100 */
-  --secondary-foreground: #0F172A;
-  --muted:                #F1F5F9;
-  --muted-foreground:     #64748B; /* Slate-500 */
-  --accent:               #F1F5F9;
-  --accent-foreground:    #0F172A;
-  --destructive:          #EF4444; /* Red-500 */
-  --border:               #E2E8F0; /* Slate-200 */
-  --input:                #E2E8F0;
-  --ring:                 rgba(0, 255, 194, 0.4);
-  --radius:               0.5rem;
+	/* ── Shadcn / Radix base tokens ─────────────────────────────────────── */
+	--background: #0e1117;
+	--foreground: #f1f5f9;
+	--card: #121212;
+	--card-foreground: #fafafa;
+	--popover: #121212;
+	--popover-foreground: #fafafa;
+	--primary: #00ffc2; /* Carbon Mint */
+	--primary-foreground: #050505; /* Obsidian */
+	--secondary: #1a1a1a;
+	--secondary-foreground: #fafafa;
+	--muted: #1a1a1a;
+	--muted-foreground: #a1a1aa; /* Zinc-400 */
+	--accent: #1a1a1a;
+	--accent-foreground: #fafafa;
+	--destructive: #ef4444; /* Red-500 */
+	--border: rgba(255, 255, 255, 0.08);
+	--input: #1a1a1a;
+	--ring: rgba(0, 255, 194, 0.4);
+	--radius: 0.5rem;
 
-  /* Sidebar */
-  --sidebar:                     rgba(255, 255, 255, 0.8);
-  --sidebar-foreground:          #0F172A;
-  --sidebar-primary:             #00FFC2;
-  --sidebar-primary-foreground:  #0F172A;
-  --sidebar-accent:              rgba(15, 23, 42, 0.04);
-  --sidebar-accent-foreground:   #0F172A;
-  --sidebar-border:              #E2E8F0;
-  --sidebar-ring:                rgba(0, 255, 194, 0.4);
+	/* ── Sidebar ─────────────────────────────────────────────────────────── */
+	--sidebar: rgba(14, 17, 23, 0.85);
+	--sidebar-foreground: #fafafa;
+	--sidebar-primary: #00ffc2;
+	--sidebar-primary-foreground: #050505;
+	--sidebar-accent: rgba(255, 255, 255, 0.06);
+	--sidebar-accent-foreground: #fafafa;
+	--sidebar-border: rgba(255, 255, 255, 0.08);
+	--sidebar-ring: rgba(0, 255, 194, 0.4);
 
-  /* Charts */
-  --chart-1: #00FFC2;
-  --chart-2: #64748B;
-  --chart-3: #475569;
-  --chart-4: #334155;
-  --chart-5: #1E293B;
+	/* ── Charts ──────────────────────────────────────────────────────────── */
+	--chart-1: #00ffc2;
+	--chart-2: #3b82f6;
+	--chart-3: #a78bfa;
+	--chart-4: #f59e0b;
+	--chart-5: #ef4444;
 
-  /* ── Scout design tokens ─────────────────────────────────────────── */
+	/* ────────────────────────────────────────────────────────────────────── */
+	/*  SCOUT DESIGN TOKENS                                                   */
+	/* ────────────────────────────────────────────────────────────────────── */
 
-  /* Carbon Mint */
-  --mint:      #00FFC2;
-  --mint-dim:  rgba(0, 255, 194, 0.15);
-  --mint-glow: rgba(0, 255, 194, 0.08);
+	/* ── Surface scale (obsidian depth ladder) ───────────────────────────── */
+	--surface-0: #050505; /* Deepest black — true obsidian  */
+	--surface-1: #0e1117; /* Page background                */
+	--surface-2: #121212; /* Card / panel background        */
+	--surface-3: #1a1a1a; /* Elevated input / secondary card*/
+	--surface-4: #222222; /* Hover / active surface         */
 
-  /* Surface scale */
-  --surface-0: #FBFBFB;
-  --surface-1: #FFFFFF;
-  --surface-2: #F8FAFC; /* Slate-50 */
-  --surface-3: #F1F5F9; /* Slate-100 */
+	/* ── Border scale ────────────────────────────────────────────────────── */
+	--border-subtle: rgba(255, 255, 255, 0.04);
+	--border-default: rgba(255, 255, 255, 0.08);
+	--border-strong: rgba(255, 255, 255, 0.15);
+	--border-focus: rgba(0, 255, 194, 0.5);
 
-  /* Border scale */
-  --border-subtle:  #F1F5F9;
-  --border-default: #E2E8F0; /* Crisp 1px slate border */
-  --border-strong:  #CBD5E1;
+	/* ── Text scale ──────────────────────────────────────────────────────── */
+	--text-1: #fafafa; /* Primary — headings, labels     */
+	--text-2: #a1a1aa; /* Body copy — Zinc-400           */
+	--text-3: #71717a; /* Dimmed metadata — Zinc-500     */
+	--text-4: #3f3f46; /* Disabled / placeholder         */
 
-  /* Text scale */
-  --text-1: #0F172A; /* Slate-900 */
-  --text-2: #475569; /* Slate-600 */
-  --text-3: #94A3B8; /* Slate-400 */
+	/* ── Carbon Mint accent ──────────────────────────────────────────────── */
+	--mint: #00ffc2;
+	--mint-dim: rgba(0, 255, 194, 0.12);
+	--mint-glow: rgba(0, 255, 194, 0.08);
+	--mint-strong: rgba(0, 255, 194, 0.25);
+	--mint-nav-glow: 0 0 0 1.5px #00ffc2, 0 0 10px rgba(0, 255, 194, 0.3);
 
-  /* Match score colours */
-  --score-excellent: #00FFC2;
-  --score-good:      #3B82F6; /* Blue-500 */
-  --score-fair:      #F59E0B; /* Amber-500 */
-  --score-low:       #EF4444; /* Red-500 */
-}
+	/* ── Match score colours ─────────────────────────────────────────────── */
+	--score-excellent: #00ffc2; /* 90+ */
+	--score-good: #3b82f6; /* 70+ */
+	--score-fair: #f59e0b; /* 50+ */
+	--score-low: #ef4444; /* <50  */
 
-/* Obsidian Dark Mode palette — "Obsidian Mint" identity */
-.dark {
-  --background:           #0E1117;
-  --foreground:           #F1F5F9; /* Softer White */
-  --card:                 #121212;
-  --card-foreground:      #FAFAFA;
-  --popover:              #121212;
-  --popover-foreground:   #FAFAFA;
-  --primary:              #00FFC2; /* Carbon Mint */
-  --primary-foreground:   #050505; /* Obsidian */
-  --secondary:            #1A1A1A;
-  --secondary-foreground: #FAFAFA;
-  --muted:                #1A1A1A;
-  --muted-foreground:     #A1A1AA; /* Zinc-400 — body text */
-  --accent:               #1A1A1A;
-  --accent-foreground:    #FAFAFA;
-  --border:               rgba(255, 255, 255, 0.08);
-  --input:                #1A1A1A;
-
-  --surface-0:            #050505;
-  --surface-1:            #121212;
-  --surface-2:            #1A1A1A;
-  --surface-3:            #222222;
-
-  --border-subtle:        rgba(255, 255, 255, 0.05);
-  --border-default:       rgba(255, 255, 255, 0.08);
-  --border-strong:        rgba(255, 255, 255, 0.15);
-
-  --text-1:               #FAFAFA;
-  --text-2:               #A1A1AA; /* Zinc-400 */
-  --text-3:               #71717A; /* Zinc-500 */
-
-  /* Mint glow for active nav icon */
-  --mint-nav-glow:        0 0 0 1.5px #00FFC2, 0 0 10px rgba(0, 255, 194, 0.3);
+	/* ── Semantic status dots ────────────────────────────────────────────── */
+	--status-remote: #34d399; /* Emerald-400 */
+	--status-hybrid: #60a5fa; /* Blue-400    */
+	--status-onsite: #fbbf24; /* Amber-400   */
 }
 
 @layer base {
-  * {
-    box-sizing: border-box;
-    border-color: var(--border-default);
-  }
+	* {
+		box-sizing: border-box;
+		border-color: var(--border-default);
+	}
 
-  html {
-    @apply font-sans;
-  }
+	html {
+		@apply font-sans;
+		color-scheme: dark;
+	}
 
-  body {
-    background-color: var(--background);
-    color: var(--foreground);
-    min-height: 100dvh;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+	body {
+		background-color: var(--background);
+		color: var(--foreground);
+		min-height: 100dvh;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
 
-  /* Thin scrollbar */
-  ::-webkit-scrollbar          { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track    { background: transparent; }
-  ::-webkit-scrollbar-thumb    { background: rgba(255, 255, 255, 0.08); border-radius: 99px; }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.15); }
+	/* ── Thin scrollbar (obsidian style) ─────────────────────────────────── */
+	::-webkit-scrollbar {
+		width: 5px;
+		height: 5px;
+	}
+	::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	::-webkit-scrollbar-thumb {
+		background: rgba(255, 255, 255, 0.08);
+		border-radius: 99px;
+	}
+	::-webkit-scrollbar-thumb:hover {
+		background: rgba(255, 255, 255, 0.15);
+	}
 }
 
-/* ── Scout utility classes ──────────────────────────────────────────── */
+/* ── Scout utility classes ──────────────────────────────────────────────── */
 @layer utilities {
-  .glass {
-    background: rgba(251, 251, 251, 0.72);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-  }
+	/* Glass — sidebar / floating UIs */
+	.glass {
+		background: rgba(14, 17, 23, 0.8);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+	}
 
-  .dark .glass {
-    background: rgba(18, 18, 18, 0.80);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-  }
+	/* Glass-card — inline card overlay */
+	.glass-card {
+		background: var(--surface-2);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		border: 1px solid var(--border-default);
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+	}
 
-  .glass-card {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--border-default);
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
-  }
+	/* Glass-dark — deepest floating element */
+	.glass-dark {
+		background: rgba(5, 5, 5, 0.85);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		border: 1px solid var(--border-default);
+	}
 
-  .dark .glass-card {
-    background: #121212;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
-  }
+	/* Obsidian card — primary card primitive */
+	.obsidian-card {
+		background: var(--surface-2);
+		border: 1px solid var(--border-default);
+		border-radius: 1rem;
+	}
 
-  .glass-dark {
-    background: rgba(5, 5, 5, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-  }
+	/* Border helpers */
+	.border-subtle {
+		border-color: var(--border-subtle);
+	}
+	.border-strong {
+		border-color: var(--border-strong);
+	}
 
-  /* Obsidian card — dark-mode first-class card */
-  .obsidian-card {
-    background: #121212;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 1rem;
-  }
+	/* Mint helpers */
+	.text-mint {
+		color: var(--mint);
+	}
+	.bg-mint {
+		background-color: var(--mint);
+	}
+	.bg-mint-dim {
+		background-color: var(--mint-dim);
+	}
 
-  .border-subtle { border-color: var(--border-subtle); }
-  .border-strong { border-color: var(--border-strong); }
+	/* Score badge */
+	.score-badge {
+		font-variant-numeric: tabular-nums;
+		font-weight: 700;
+		font-size: 0.72rem;
+		letter-spacing: 0.03em;
+		line-height: 1;
+	}
 
-  .text-mint     { color: var(--mint); }
-  .bg-mint       { background-color: var(--mint); }
-  .bg-mint-dim   { background-color: var(--mint-dim); }
+	/* Surface helpers */
+	.surface-0 {
+		background-color: var(--surface-0);
+	}
+	.surface-1 {
+		background-color: var(--surface-1);
+	}
+	.surface-2 {
+		background-color: var(--surface-2);
+	}
+	.surface-3 {
+		background-color: var(--surface-3);
+	}
 
-  .score-badge {
-    font-variant-numeric: tabular-nums;
-    font-weight: 700;
-    font-size: 0.72rem;
-    letter-spacing: 0.03em;
-    line-height: 1;
-  }
+	/* Mint glow ring — use on interactive mint elements */
+	.ring-mint {
+		box-shadow: var(--mint-nav-glow);
+	}
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--font-sans: var(--font-sans);
+	--font-mono: var(--font-geist-mono);
+	--color-sidebar-ring: var(--sidebar-ring);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar: var(--sidebar);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-destructive: var(--destructive);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--radius-sm: calc(var(--radius) * 0.6);
+	--radius-md: calc(var(--radius) * 0.8);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) * 1.4);
 }
