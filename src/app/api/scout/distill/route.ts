@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 /**
  * POST /api/scout/distill
  * Re-distills a single existing job by ID.
- * Fetches the stored apply_url, re-scrapes and re-runs Gemini analysis,
+ * Fetches the stored apply_url, re-scrapes and re-runs Groq analysis,
  * then patches match_score, match_explanation, missing_skills, and description.
  */
 export async function POST(req: Request) {
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     // 3. Fetch company intel
     const companyIntel = await fetchCompanyIntel(companyName);
 
-    // 4. Re-distill via Gemini
+    // 4. Re-distill via Groq
     const distilled = await distillJobData(rawText, companyIntel);
 
     // 5. Patch only the AI-generated fields (don't overwrite user edits to status etc.)

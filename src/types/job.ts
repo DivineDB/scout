@@ -19,6 +19,15 @@ export interface DistilledData {
   match_logic?: string;
 }
 
+/** Per-channel cached outreach hooks */
+export interface OutreachHooks {
+  email?: string;
+  linkedin?: string;
+  twitter?: string;
+}
+
+export type OutreachChannel = keyof OutreachHooks;
+
 export type RemoteStatus = "Remote" | "Hybrid" | "On-site";
 
 export type ExperienceLevel =
@@ -120,11 +129,30 @@ export interface JobPost {
   tags: string[];
 
   /** Status of the job in the pipeline */
-  status: "casual" | "serious";
+  status: "casual" | "serious" | "applied" | "interviewing" | "rejected" | "removed";
 
   /** AI-generated outreach hook (persisted to DB) */
   hook?: string;
   generated_hook?: string;
+
+  /**
+   * Per-channel cached outreach hooks (email / linkedin / twitter).
+   * Stored as JSONB in Supabase. Prevents regeneration on every page load.
+   */
+  outreach_hooks?: OutreachHooks;
+
+  /**
+   * Anti-gatekeeper objection handling strategies.
+   * AI-generated list addressing likely interview/screening objections.
+   * Stored as TEXT[] in Supabase.
+   */
+  objection_strategies?: string[];
+
+  /**
+   * Relational mapping to portfolio assets.
+   * Stored as JSONB array of objects/relations in Supabase.
+   */
+  portfolio_mapping?: any[];
 
   /** True when user profile changed and match_score needs re-validation */
   match_stale?: boolean;
@@ -140,4 +168,8 @@ export interface JobPost {
 
   /** Job source: 'serper' | 'remoteok' | 'remotive' | 'manual' */
   source?: string;
+
+  /** DB Record Timestamps */
+  created_at?: string;
+  updated_at?: string;
 }

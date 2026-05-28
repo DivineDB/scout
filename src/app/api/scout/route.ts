@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     const companyName = await extractCompanyName(rawText);
 
     // ── Step 3: Save a RAW STUB to Supabase immediately ───────────────────────
-    // This guarantees a real UUID is created even if Gemini distillation fails.
+    // This guarantees a real UUID is created even if Groq distillation fails.
     console.log(`[Scout] Saving stub to database for guaranteed UUID...`);
     const { data: stub, error: stubError } = await supabaseAdmin
       .from("jobs")
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
       ? await fetchCompanyIntel(companyName)
       : "";
 
-    console.log(`[Scout] Distilling job post via Gemini...`);
+    console.log(`[Scout] Distilling job post via Groq...`);
     try {
       const distilled = await distillJobData(rawText, companyIntel);
 

@@ -1,64 +1,75 @@
 {
-  "name": "Divyansh Baghel",
-  "degree": "B.Tech Computer Science",
-  "graduation_year": 2025,
-  "summary": "A 2025 CS Grad with a filmmaker's eye for UX. Building full-stack systems where high-fidelity design meets agentic automation.",
-  "location": {
-    "city": "Gwalior",
-    "state": "Madhya Pradesh",
-    "country": "India"
-  },
-  "contact": {
-    "email": "divyansh@example.com",
-    "phone": "+91 9999999999"
-  },
-  "interests": ["Full-Stack Development", "UI/UX Design", "Artificial Intelligence", "Filmmaking", "Photography"],
-  "skills": {
-    "languages": ["TypeScript", "JavaScript", "Python", "HTML", "CSS"],
-    "frameworks": ["React", "Next.js", "Node.js", "Express", "Tailwind CSS"],
-    "ui_ux": ["Figma", "Framer", "Design Systems", "Prototyping"],
-    "ai_ml": ["Prompt Engineering", "OpenAI API", "LangChain", "Hugging Face"],
-    "tools": ["Git", "GitHub", "VS Code", "Postman", "Docker (basic)"],
-    "databases": ["PostgreSQL", "MongoDB", "SQLite", "Prisma ORM"]
-  },
-  "experience_details": [
-    {
-      "role": "Frontend Engineering Intern",
-      "company": "BuildFast Tech",
-      "duration": "May 2024 - Aug 2024",
-      "bullets": [
-        "Developed comprehensive React components using modern functional component patterns and React Hooks.",
-        "Integrated robust REST APIs with Next.js, significantly improving data load times by 20%.",
-        "Configured tailored Tailwind CSS utility classes to match the design system efficiently.",
-        "Refactored legacy JavaScript code to strong TypeScript, reducing standard run-time errors.",
-        "Implemented basic web accessibility standards across multiple forms."
-      ]
-    },
-    {
-      "role": "Full-Stack Developer (Personal Project)",
-      "company": "Open-Source LMS",
-      "duration": "Jan 2023 - Dec 2023",
-      "bullets": [
-        "Built responsive user interfaces utilizing responsive web design CSS principles.",
-        "Engineered scalable backend service integrations utilizing robust Node.js and Express server routing.",
-        "Optimized query performance in PostgreSQL to retrieve massive internal datasets efficiently.",
-        "Integrated secure user authentication using modern standards."
-      ]
-    }
-  ],
-  "preferences": {
-    "preferred_roles": ["Design Engineer", "Full-Stack Developer", "UI Engineer", "AI Product Engineer"],
-    "work_type": ["Remote", "Hybrid"],
-    "desired_pay_inr_lpa": {
-      "min": 12,
-      "ideal": 18
-    },
-    "preferred_company_size": ["Startup", "Mid-size"],
-    "willing_to_relocate": false
-  },
-  "social": {
-    "github": "https://github.com/scout-user",
-    "linkedin": "https://linkedin.com/in/scout-user",
-    "portfolio": "https://scout-user.dev"
-  }
+	"name": "Divyansh Baghel",
+	"degree": "B.Tech Computer Science",
+	"graduation_year": 2025,
+	"summary": "A 2025 CS Grad with a filmmaker's eye for UX. Building full-stack systems where high-fidelity design meets agentic automation.",
+	"location": {
+		"city": "Pune",
+		"state": "Maharashtra",
+		"country": "India"
+	},
+	"contact": {
+		"email": "Divyanshbaghel456@gmail.com",
+		"phone": "+91 9755411463"
+	},
+	"interests": [
+		"Full-Stack Development",
+		"UI/UX Design",
+		"Artificial Intelligence",
+		"Filmmaking",
+		"Photography"
+	],
+	"skills": {
+		"languages": ["TypeScript", "JavaScript", "Python", "HTML", "CSS"],
+		"frameworks": ["React", "Next.js", "Node.js", "Express", "Tailwind CSS"],
+		"ui_ux": ["Figma", "Framer", "Design Systems", "Prototyping"],
+		"ai_ml": ["Prompt Engineering", "OpenAI API", "LangChain", "Hugging Face"],
+		"tools": ["Git", "GitHub", "VS Code", "Postman", "Docker (basic)"],
+		"databases": ["PostgreSQL", "MongoDB", "SQLite", "Prisma ORM"]
+	},
+	"experience_details": [
+		{
+			"role": "Frontend Engineering Intern",
+			"company": "BuildFast Tech",
+			"duration": "May 2024 - Aug 2024",
+			"bullets": [
+				"Developed comprehensive React components using modern functional component patterns and React Hooks.",
+				"Integrated robust REST APIs with Next.js, significantly improving data load times by 20%.",
+				"Configured tailored Tailwind CSS utility classes to match the design system efficiently.",
+				"Refactored legacy JavaScript code to strong TypeScript, reducing standard run-time errors.",
+				"Implemented basic web accessibility standards across multiple forms."
+			]
+		},
+		{
+			"role": "Full-Stack Developer (Personal Project)",
+			"company": "Open-Source LMS",
+			"duration": "Jan 2023 - Dec 2023",
+			"bullets": [
+				"Built responsive user interfaces utilizing responsive web design CSS principles.",
+				"Engineered scalable backend service integrations utilizing robust Node.js and Express server routing.",
+				"Optimized query performance in PostgreSQL to retrieve massive internal datasets efficiently.",
+				"Integrated secure user authentication using modern standards."
+			]
+		}
+	],
+	"preferences": {
+		"preferred_roles": [
+			"Design Engineer",
+			"Full-Stack Developer",
+			"UI Engineer",
+			"AI Product Engineer"
+		],
+		"work_type": ["Remote", "Hybrid"],
+		"desired_pay_inr_lpa": {
+			"min": 6,
+			"ideal": 18
+		},
+		"preferred_company_size": ["Startup", "Mid-size"],
+		"willing_to_relocate": false
+	},
+	"social": {
+		"github": "https://github.com/DivineDB",
+		"linkedin": "https://linkedin.com/in/divyansh-baghel/",
+		"portfolio": "https://divyanshbaghel.in"
+	}
 }

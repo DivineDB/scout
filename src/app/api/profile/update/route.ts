@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -17,6 +18,7 @@ export interface ProfileUpdate {
   // FilterBar ghost targeting fields
   preferred_roles?: string[];
   preferred_location?: string[];
+  preferred_experience?: string[];
 }
 
 /**
@@ -67,6 +69,7 @@ export async function POST(req: Request) {
     // FilterBar ghost targeting fields
     if (body.preferred_roles !== undefined)   payload.preferred_roles   = body.preferred_roles;
     if (body.preferred_location !== undefined) payload.preferred_location = body.preferred_location;
+    if (body.preferred_experience !== undefined) payload.preferred_experience = body.preferred_experience;
 
     // Store experience_details inside the existing skills JSONB column to avoid Postgres schema migrations
     if (body.skills || body.experience_details) {
@@ -97,6 +100,9 @@ export async function POST(req: Request) {
     }
 
     console.log("[Profile] Saved successfully:", savedProfile?.id);
+
+    // Revalidate the casual dashboard so feed picks up new profile params.
+    revalidatePath("/dashboard/casual");
 
     // Flag all jobs as stale
     const { error: staleError } = await supabaseAdmin

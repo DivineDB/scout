@@ -3,17 +3,16 @@
 Designed to cut through the noise, distil signal, and target high-pay remote roles seamlessly.
 
 ## Current Progress & Status
-- **Status**: Mission 8.0 — Design System Hardening — IN PROGRESS.
+- **Status**: Mission 8.5 — Realtime Staging Queue — COMPLETED
 - **Features Implemented**:
+  - **Mission 8.5: Realtime Staging Queue**: Upgraded the Supabase Realtime subscription in `JobGrid.tsx` to utilize a Staging Queue pattern. Prevents jarring layout shifts by holding new live inserts in a `stagedJobs` state. Realtime inserts trigger a premium, glow-shadowed floating pill at `fixed top-24` notifying the user. When clicked, it seamlessly merges the staged jobs, scrolls to the top with a smooth animation, and executes a high-end card highlight flash.
+  - **Mission 8.4: Premium Floating Action Bar**: Refactored the footer actions inside `JobInsightSheet.tsx` into a sticky, premium bottom floating action bar. Hand-crafted with blurred glass (`bg-[var(--surface-1)]/90 backdrop-blur-md`), subtle top border, quiet secondary actions (Trash + Refresh icons on the left), and high-intent, glow-shadowed primary CTAs (Promote with Lucide `Target` + Copy ghost button on the right). Removed legacy body escape hatch.
+  - **Mission 8.4: Terminal Stability & Bug Fixes**: Resolved Next.js hydration error in `FilterBar.tsx` caused by nested buttons inside Radix `<PopoverTrigger>` by enabling `asChild`. Fixed a strict React Hook order violation in `JobInsightSheet.tsx` by moving the early return (`if (!job) return null;`) to the end of the component and implementing safe optional chaining across all state hooks and callbacks. Fixed a PGRST204 database schema error during fallback upsert in `ghost.ts` by removing invalid fields (like `name` and other hallucinated columns) and enforcing static typing with a strict local `UserProfile` interface to catch future schema mismatches.
+  - **Mission 8.4: Multi-Channel Outreach & Dynamic Search**: Overhauled `JobInsightSheet` with multi-channel outreach hooks (Email, LinkedIn, Twitter) and a "Shield: Objection Handling" accordion for anti-gatekeeper strategies. Added `POST /api/scout/search` for on-demand dynamic job search (bypassing user profile). Updated `POST /api/job/generate-hook` and `POST /api/job/analyze-gaps` to cache results to Supabase (`outreach_hooks` JSONB and `objection_strategies` TEXT[]). Made Cron Sweep (`ghost.ts`) dynamically driven by the Supabase `user_profile` table (salary floor and location).
+  - **Mission 8.3: Dead Code & Dependency Audit**: Swept workspace for unused elements. Identified 2 dead React components (`DynamicSearch.tsx` and `ui/drawer.tsx`), dead dependencies (`vaul` is technically dead since only `drawer.tsx` uses it), and remaining Gemini code comments to be cleaned.
+  - **Mission 8.2: Instant Optimistic UI & Cache Invalidation**: Overhauled `FilterBar.tsx` using a high-performance optimistic state machine with a `useRef` 600ms debounce. Toggles and sliders feel instant. Added `revalidatePath('/dashboard/casual')` to the profile update API so Next.js server components reflect changes immediately without browser refreshes.
+  - **Mission 8.1: Serious Queue Control & Trigger**: Added "Clear Queue" (with 3s confirm-to-click safety) and "Ghost Scout" manual trigger buttons directly to the Serious Queue page header, backed by `/api/job/clear-serious` (DELETE) and `/api/ghost/trigger` (POST) API endpoints.
   - **Mission 8.0: Obsidian Mint Design System v1.0**: Removed all light mode infrastructure. Collapsed dual `:root` / `.dark` CSS into a single permanent dark `:root`. Added `--surface-4`, `--mint-strong`, `--border-focus`, `--text-4`, `--status-*` tokens, and utility classes `.surface-*`, `.ring-mint`. ThemeProvider locked via `forcedTheme="dark"`. `<html>` has hardcoded `class="dark"` + `colorScheme: "dark"`. Theme toggle button removed from Sidebar.
-  - **Mission 7.6: Groq Migration & Zero-Lag UI**: Migrated AI engine from Google Gemini to Groq. Implemented a two-stage background pipeline (llama-3.1-8b for classification, llama-3.3-70b for deep distillation). Persistent `distilled_data` storage in Supabase allows instant, zero-lag UI rendering in `JobInsightSheet.tsx` and Serious Mode.
-  - **Mission 7.5: Serper /jobs & ATS Fallback**: Updated Serper.dev integration to strictly use the `/jobs` endpoint. Implemented a robust ATS fallback mechanism using a boolean "dorking" query to target Lever/Greenhouse/Ashby boards directly when the jobs widget fails.
-  - **Mission 7 Patch: Ghost Blindness Fix** *(7.04)*: Fixed Serper query logic to avoid double 'engineer' keywords. Relaxed Hard Gate by temporarily disabling salary filters for higher ingestion volume from RemoteOK/Remotive. Added raw response logging for debugging.
-  - **Ghost Scouter MVP** *(7.01)*: Built a background worker using Serper.dev, RemoteOK, and Remotive + Groq 8B/70B scoring. Triggers daily via Vercel Cron. Inserts high-match jobs directly into the `casual` queue. Fires 🦄 Unicorn email alerts via Resend for 95%+ matches.
-  - **FilterBar & Ghost Status** *(7.0)*: Added a persistent, dynamic FilterBar in Casual Browse that syncs targeted roles, location, and salary to Supabase. Added Real-time Ghost 👻 indicator in Sidebar with hover stats.
-  - **Experience Details Persistence** *(6.18)*: Added `experience_details` column to `user_profile` table and integrated it into the Resume Command Center for persistent Career Story editing.
-  - **Column Fix: `distillation_pending`** *(6.14)*: Identified and repaired the missing `distillation_pending` column in the `jobs` table via MCP, resolving 500 errors in the scouting pipeline.
-  - **Stub-First Scouting** *(6.13)*: Rewrote the scouting pipeline to save a "Raw Stub" to Supabase immediately after scraping. This guarantees a native UUID for the job even if AI distillation fails or is delayed.
 
 ## Architecture
 - **Tech Stack**: Next.js 15, Supabase (service role key), Groq SDK (llama-3.3-70b Distiller, llama-3.1-8b Classifier), Firecrawl v4, @react-pdf/renderer.
@@ -71,13 +70,16 @@ Designed to cut through the noise, distil signal, and target high-pay remote rol
 |---|---|---|---|
 | `POST /api/scout` | POST | Groq 70B + Firecrawl | Scrape URL → stub save → AI distill → patch |
 | `POST /api/scout/distill` | POST | Groq 70B + Firecrawl | Re-distill existing job by ID |
+| `POST /api/scout/search` | POST | Serper | On-demand dynamic job search (bypasses profile) |
 | `POST /api/job/analyze-gaps` | POST | Groq 8B | Gap analysis for <70% matches |
 | `POST /api/job/generate-hook` | POST | Groq 8B | Cold outreach hook generator |
 | `POST /api/job/update` | POST | Supabase | Generic job field updater |
 | `POST /api/job/status` | POST | Supabase | Update `casual`→`serious` status |
+| `DELETE /api/job/clear-serious` | DELETE | Supabase | Deletes all "serious" status jobs from Supabase |
+| `POST /api/ghost/trigger` | POST | Groq + Serper + Resend | Fire-and-forget manual ghost scout sweep trigger |
 | `GET /api/ghost/status` | GET | Supabase | Last sweep heartbeat stats |
 | `GET /api/cron/sweep` | GET/POST | Groq + Serper + Resend | Ghost sweep cron (CRON_SECRET protected) |
-| `GET /api/profile/update` | GET/POST | Supabase | Read/upsert user profile |
+| `GET/POST /api/profile/update` | GET/POST | Supabase | Read/upsert user profile with optimistic revalidation |
 
 ### API Health Notes
 - ✅ All routes use **Groq** (`GROQ_API_KEY` set in `.env.local`)
@@ -89,7 +91,7 @@ Designed to cut through the noise, distil signal, and target high-pay remote rol
 - ⚠️ `GEMINI_API_KEY` still in `.env.local` — unused, safe to remove
 
 ## Supabase Schema (Critical Reference)
-- **`jobs`** table: `id` (uuid PK), `status` (text: `casual` | `serious`), `match_score`, `match_stale`, `match_explanation`, `source` (ghost/manual), `snippet`, `distillation_pending` (bool), etc.
+- **`jobs`** table: `id` (uuid PK), `status` (text: `casual` | `serious`), `match_score`, `match_stale`, `match_explanation`, `source` (ghost/manual), `snippet`, `distillation_pending` (bool), `outreach_hooks` (jsonb), `objection_strategies` (text[]), etc.
 - **`user_profile`** table: `id` (uuid PK), `profile_key` (text), `city`, `state`, `salary_min`, `salary_ideal`, `skills` (jsonb), `experience_details` (text), `preferred_roles` (text[]), `preferred_location` (text[]), `updated_at`.
 - **`ghost_sweeps`** table: `id` (uuid PK), `ran_at`, `jobs_found`, `jobs_saved`, `high_matches`, `status`, `query_used`.
 - **RLS Status**: Use service role key in API routes to bypass RLS.

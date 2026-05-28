@@ -11,84 +11,91 @@
    The single source of truth for every visual token in the app.
    ═══════════════════════════════════════════════════════════════════════════ */
 :root {
-	/* ── Shadcn / Radix base tokens ─────────────────────────────────────── */
-	--background: #0e1117;
-	--foreground: #f1f5f9;
-	--card: #121212;
+	/* ── Zinc-based Deep Dark Palette ─────────────────────────────────── */
+	--background: #09090b; /* Zinc-950 */
+	--foreground: #fafafa; /* Zinc-50 */
+
+	--card: transparent;
 	--card-foreground: #fafafa;
-	--popover: #121212;
+
+	--popover: #09090b;
 	--popover-foreground: #fafafa;
-	--primary: #00ffc2; /* Carbon Mint */
-	--primary-foreground: #050505; /* Obsidian */
-	--secondary: #1a1a1a;
+
+	--primary: #fafafa; /* Minimal primary */
+	--primary-foreground: #09090b;
+
+	--secondary: #27272a; /* Zinc-800 */
 	--secondary-foreground: #fafafa;
-	--muted: #1a1a1a;
-	--muted-foreground: #a1a1aa; /* Zinc-400 */
-	--accent: #1a1a1a;
+
+	--muted: #18181b; /* Zinc-900 */
+	--muted-foreground: rgba(161, 161, 170, 0.6); /* Zinc-400 at 60% */
+
+	--accent: #27272a;
 	--accent-foreground: #fafafa;
-	--destructive: #ef4444; /* Red-500 */
-	--border: rgba(255, 255, 255, 0.08);
-	--input: #1a1a1a;
-	--ring: rgba(0, 255, 194, 0.4);
+
+	--destructive: #ef4444;
+	--border: rgba(255, 255, 255, 0.08); /* Minimal 1px border */
+	--input: #09090b;
+	--ring: rgba(255, 255, 255, 0.1);
 	--radius: 0.5rem;
 
 	/* ── Sidebar ─────────────────────────────────────────────────────────── */
-	--sidebar: rgba(14, 17, 23, 0.85);
-	--sidebar-foreground: #fafafa;
-	--sidebar-primary: #00ffc2;
-	--sidebar-primary-foreground: #050505;
-	--sidebar-accent: rgba(255, 255, 255, 0.06);
+	--sidebar: #09090b;
+	--sidebar-foreground: #a1a1aa;
+	--sidebar-primary: #fafafa;
+	--sidebar-primary-foreground: #09090b;
+	--sidebar-accent: rgba(255, 255, 255, 0.03);
 	--sidebar-accent-foreground: #fafafa;
-	--sidebar-border: rgba(255, 255, 255, 0.08);
-	--sidebar-ring: rgba(0, 255, 194, 0.4);
+	--sidebar-border: rgba(255, 255, 255, 0.05);
 
 	/* ── Charts ──────────────────────────────────────────────────────────── */
-	--chart-1: #00ffc2;
-	--chart-2: #3b82f6;
-	--chart-3: #a78bfa;
-	--chart-4: #f59e0b;
-	--chart-5: #ef4444;
+	--chart-1: #fafafa;
+	--chart-2: #a1a1aa;
+	--chart-3: #52525b;
+	--chart-4: #3f3f46;
+	--chart-5: #27272a;
 
 	/* ────────────────────────────────────────────────────────────────────── */
-	/*  SCOUT DESIGN TOKENS                                                   */
+	/*  DESIGN TOKENS                                                         */
 	/* ────────────────────────────────────────────────────────────────────── */
 
-	/* ── Surface scale (obsidian depth ladder) ───────────────────────────── */
-	--surface-0: #050505; /* Deepest black — true obsidian  */
-	--surface-1: #0e1117; /* Page background                */
-	--surface-2: #121212; /* Card / panel background        */
-	--surface-3: #1a1a1a; /* Elevated input / secondary card*/
-	--surface-4: #222222; /* Hover / active surface         */
+	/* ── Surface scale (Zinc) ─────────────────────────────────────────── */
+	--surface-0: #09090b; /* Deepest */
+	--surface-1: #09090b; /* Page Background */
+	--surface-2: rgba(255, 255, 255, 0.02); /* Glassy surface */
+	--surface-3: #18181b; /* Zinc-900 */
+	--surface-4: #27272a; /* Zinc-800 */
 
 	/* ── Border scale ────────────────────────────────────────────────────── */
 	--border-subtle: rgba(255, 255, 255, 0.04);
 	--border-default: rgba(255, 255, 255, 0.08);
 	--border-strong: rgba(255, 255, 255, 0.15);
-	--border-focus: rgba(0, 255, 194, 0.5);
+	--border-focus: rgba(255, 255, 255, 0.2);
 
 	/* ── Text scale ──────────────────────────────────────────────────────── */
-	--text-1: #fafafa; /* Primary — headings, labels     */
-	--text-2: #a1a1aa; /* Body copy — Zinc-400           */
-	--text-3: #71717a; /* Dimmed metadata — Zinc-500     */
-	--text-4: #3f3f46; /* Disabled / placeholder         */
+	--text-1: #fafafa;
+	--text-2: rgba(250, 250, 250, 0.8);
+	--text-3: rgba(161, 161, 170, 0.6); /* Heavily muted secondary */
+	--text-4: rgba(161, 161, 170, 0.4);
 
-	/* ── Carbon Mint accent ──────────────────────────────────────────────── */
-	--mint: #00ffc2;
-	--mint-dim: rgba(0, 255, 194, 0.12);
-	--mint-glow: rgba(0, 255, 194, 0.08);
-	--mint-strong: rgba(0, 255, 194, 0.25);
-	--mint-nav-glow: 0 0 0 1.5px #00ffc2, 0 0 10px rgba(0, 255, 194, 0.3);
+	/* ── Brand Accent (Mint) ──────────────────────────────────────────────── */
+	--mint: #10b981;
+	--mint-dim: rgba(16, 185, 129, 0.1);
+	--accent-color: #fafafa;
+	--accent-dim: rgba(255, 255, 255, 0.05);
+	--accent-glow: rgba(255, 255, 255, 0.02);
+	--accent-strong: rgba(255, 255, 255, 0.1);
 
 	/* ── Match score colours ─────────────────────────────────────────────── */
-	--score-excellent: #00ffc2; /* 90+ */
-	--score-good: #3b82f6; /* 70+ */
-	--score-fair: #f59e0b; /* 50+ */
-	--score-low: #ef4444; /* <50  */
+	--score-excellent: #fafafa;
+	--score-good: #a1a1aa;
+	--score-fair: #71717a;
+	--score-low: #3f3f46;
 
 	/* ── Semantic status dots ────────────────────────────────────────────── */
-	--status-remote: #34d399; /* Emerald-400 */
-	--status-hybrid: #60a5fa; /* Blue-400    */
-	--status-onsite: #fbbf24; /* Amber-400   */
+	--status-remote: #fafafa;
+	--status-hybrid: #a1a1aa;
+	--status-onsite: #71717a;
 }
 
 @layer base {
@@ -142,7 +149,6 @@
 		backdrop-filter: blur(12px);
 		-webkit-backdrop-filter: blur(12px);
 		border: 1px solid var(--border-default);
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 	}
 
 	/* Glass-dark — deepest floating element */
@@ -156,7 +162,7 @@
 	/* Obsidian card — primary card primitive */
 	.obsidian-card {
 		background: var(--surface-2);
-		border: 1px solid var(--border-default);
+		border: 1px solid var(--border-subtle);
 		border-radius: 1rem;
 	}
 
@@ -167,6 +173,20 @@
 	.border-strong {
 		border-color: var(--border-strong);
 	}
+	.border-focus {
+		border-color: var(--border-focus);
+	}
+
+	/* Accent helpers */
+	.text-accent {
+		color: var(--accent-color);
+	}
+	.bg-accent {
+		background-color: var(--accent-color);
+	}
+	.bg-accent-dim {
+		background-color: var(--accent-dim);
+	}
 
 	/* Mint helpers */
 	.text-mint {
@@ -175,8 +195,16 @@
 	.bg-mint {
 		background-color: var(--mint);
 	}
+	.border-mint {
+		border-color: var(--mint);
+	}
 	.bg-mint-dim {
 		background-color: var(--mint-dim);
+	}
+
+	/* Border default helpers */
+	.border-default {
+		border-color: var(--border-default);
 	}
 
 	/* Score badge */
@@ -201,10 +229,39 @@
 	.surface-3 {
 		background-color: var(--surface-3);
 	}
+	.surface-4 {
+		background-color: var(--surface-4);
+	}
 
-	/* Mint glow ring — use on interactive mint elements */
-	.ring-mint {
-		box-shadow: var(--mint-nav-glow);
+	/* Text-scale helpers */
+	.text-text-1 {
+		color: var(--text-1);
+	}
+	.text-text-2 {
+		color: var(--text-2);
+	}
+	.text-text-3 {
+		color: var(--text-3);
+	}
+	.text-text-4 {
+		color: var(--text-4);
+	}
+
+	/* text-accent alias */
+	.text-accent {
+		color: var(--accent-color);
+	}
+
+	/* Focus-border utility */
+	.focus\:border-strong:focus {
+		border-color: var(--border-strong);
+	}
+
+	/* Accent glow ring — use on interactive accent elements */
+	.ring-accent {
+		box-shadow:
+			0 0 0 1.5px var(--accent-color),
+			0 0 10px var(--accent-dim);
 	}
 }
 
@@ -237,6 +294,15 @@
 	--color-popover-foreground: var(--popover-foreground);
 	--color-card: var(--card);
 	--color-card-foreground: var(--card-foreground);
+	--color-text-1: var(--text-1);
+	--color-text-2: var(--text-2);
+	--color-text-3: var(--text-3);
+	--color-text-4: var(--text-4);
+	--color-mint: var(--mint);
+	--color-mint-dim: var(--mint-dim);
+	--color-accent-color: var(--accent-color);
+	--color-accent-dim: var(--accent-dim);
+	--color-accent-strong: var(--accent-strong);
 	--radius-sm: calc(var(--radius) * 0.6);
 	--radius-md: calc(var(--radius) * 0.8);
 	--radius-lg: var(--radius);
