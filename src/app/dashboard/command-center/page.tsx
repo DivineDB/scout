@@ -37,6 +37,33 @@ const AVAILABLE_ROLES = [
 	"Full-stack",
 ];
 
+const SUGGESTED_ROLES = [
+	"Design Engineer",
+	"Product Designer",
+	"UI/UX Designer",
+	"UX Researcher",
+	"Frontend Engineer",
+	"Frontend Developer",
+	"React Developer",
+	"Backend Engineer",
+	"Full-stack Developer",
+	"Full-stack Engineer",
+	"AI Engineer",
+	"ML Engineer",
+	"Machine Learning Engineer",
+	"Data Scientist",
+	"Mobile Developer",
+	"iOS Developer",
+	"Android Developer",
+	"DevOps Engineer",
+	"Site Reliability Engineer",
+	"Product Manager",
+	"Technical Program Manager",
+	"Engineering Manager",
+	"QA Engineer",
+	"Software Engineer",
+];
+
 const AVAILABLE_EXPERIENCES = [
 	"Entry-level",
 	"Junior",
@@ -53,12 +80,52 @@ const DEFAULT_LOCATIONS = [
 	"On-site",
 ];
 
+const SUGGESTED_LOCATIONS = [
+	"Remote",
+	"Remote India",
+	"Hybrid",
+	"On-site",
+	"Pune",
+	"Bangalore",
+	"Bengaluru",
+	"Mumbai",
+	"Hyderabad",
+	"Delhi",
+	"New Delhi",
+	"Noida",
+	"Gurugram",
+	"Gurgaon",
+	"Chennai",
+	"Kolkata",
+	"Ahmedabad",
+	"San Francisco",
+	"New York",
+	"London",
+	"Seattle",
+	"Singapore",
+	"Berlin",
+	"Toronto",
+];
+
 export default function CommandCenterPage() {
 	const [roles, setRoles] = useState<string[]>([]);
 	const [locations, setLocations] = useState<string[]>([]);
 	const [experiences, setExperiences] = useState<string[]>([]);
 
+	// Search/Autocomplete states
+	const [customRole, setCustomRole] = useState("");
+	const [showRoleSuggestions, setShowRoleSuggestions] = useState(false);
+	const [roleSuggestions, setRoleSuggestions] = useState<string[]>([]);
+	const [activeRoleIndex, setActiveRoleIndex] = useState(0);
+
 	const [customLoc, setCustomLoc] = useState("");
+	const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
+	const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
+	const [activeLocationIndex, setActiveLocationIndex] = useState(0);
+
+	const roleSuggestionsRef = useRef<HTMLDivElement>(null);
+	const locationSuggestionsRef = useRef<HTMLDivElement>(null);
+
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSweeping, setIsSweeping] = useState(false);
 	const [sweeps, setSweeps] = useState<SweepLog[]>([]);
@@ -67,6 +134,26 @@ export default function CommandCenterPage() {
 	// Debounce references
 	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const isFirstLoadRef = useRef(true);
+
+	// Handle click outside to close suggestions
+	useEffect(() => {
+		function handleClickOutside(event: MouseEvent) {
+			if (
+				roleSuggestionsRef.current &&
+				!roleSuggestionsRef.current.contains(event.target as Node)
+			) {
+				setShowRoleSuggestions(false);
+			}
+			if (
+				locationSuggestionsRef.current &&
+				!locationSuggestionsRef.current.contains(event.target as Node)
+			) {
+				setShowLocationSuggestions(false);
+			}
+		}
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, []);
 
 	// ---- Fetch preferences on mount ----
 	useEffect(() => {
@@ -151,6 +238,12 @@ export default function CommandCenterPage() {
 		dispatchSync(next, locations, experiences);
 	};
 
+	const removeRole = (role: string) => {
+		const next = roles.filter((r) => r !== role);
+		setRoles(next);
+		dispatchSync(next, locations, experiences);
+	};
+
 	const toggleExperience = (exp: string) => {
 		const next = experiences.includes(exp)
 			? experiences.filter((e) => e !== exp)
@@ -167,8 +260,8 @@ export default function CommandCenterPage() {
 		dispatchSync(roles, next, experiences);
 	};
 
-	const addCustomLocation = (e: React.FormEvent) => {
-		e.preventDefault();
+	const addCustomLocation = (e?: React.FormEvent) => {
+		e?.preventDefault();
 		const trimmed = customLoc.trim();
 		if (!trimmed) return;
 
@@ -178,12 +271,144 @@ export default function CommandCenterPage() {
 			dispatchSync(roles, next, experiences);
 		}
 		setCustomLoc("");
+		setShowLocationSuggestions(false);
+	};
+
+	const addCustomRole = (e?: React.FormEvent) => {
+		e?.preventDefault();
+		const trimmed = customRole.trim();
+		if (!trimmed) return;
+
+		if (!roles.includes(trimmed)) {
+			const next = [...roles, trimmed];
+			setRoles(next);
+			dispatchSync(next, locations, experiences);
+		}
+		setCustomRole("");
+		setShowRoleSuggestions(false);
 	};
 
 	const removeLocation = (loc: string) => {
 		const next = locations.filter((l) => l !== loc);
 		setLocations(next);
 		dispatchSync(roles, next, experiences);
+	};
+
+	// ---- Autocomplete handlers ----
+	const handleRoleInputChange = async (val: string) => {
+		setCustomRole(val);
+		if (val.trim().length >= 3) {
+			try {
+				const res = await fetch(`/api/autocomplete?type=roles&q=${encodeURIComponent(val)}`);
+				const data = await res.json();
+				if (data.suggestions) {
+					const filtered = data.suggestions.filter((r: string) => !roles.includes(r));
+					const hasExact = filtered.some((r: string) => r.toLowerCase() === val.trim().toLowerCase());
+					const finalSuggestions = [...filtered];
+					if (!hasExact && val.trim().length > 0) {
+						finalSuggestions.push(`Add "${val.trim()}"`);
+					}
+					setRoleSuggestions(finalSuggestions);
+					setShowRoleSuggestions(true);
+					setActiveRoleIndex(0);
+				}
+			} catch (err) {
+				console.error("Error fetching role suggestions:", err);
+			}
+		} else {
+			setShowRoleSuggestions(false);
+		}
+	};
+
+	const handleLocationInputChange = async (val: string) => {
+		setCustomLoc(val);
+		if (val.trim().length >= 3) {
+			try {
+				const res = await fetch(`/api/autocomplete?type=locations&q=${encodeURIComponent(val)}`);
+				const data = await res.json();
+				if (data.suggestions) {
+					const filtered = data.suggestions.filter((l: string) => !locations.includes(l));
+					const hasExact = filtered.some((l: string) => l.toLowerCase() === val.trim().toLowerCase());
+					const finalSuggestions = [...filtered];
+					if (!hasExact && val.trim().length > 0) {
+						finalSuggestions.push(`Add "${val.trim()}"`);
+					}
+					setLocationSuggestions(finalSuggestions);
+					setShowLocationSuggestions(true);
+					setActiveLocationIndex(0);
+				}
+			} catch (err) {
+				console.error("Error fetching location suggestions:", err);
+			}
+		} else {
+			setShowLocationSuggestions(false);
+		}
+	};
+
+	const selectRoleSuggestion = (suggestion: string) => {
+		let finalVal = suggestion;
+		if (suggestion.startsWith('Add "') && suggestion.endsWith('"')) {
+			finalVal = suggestion.slice(5, -1);
+		}
+		if (finalVal && !roles.includes(finalVal)) {
+			const next = [...roles, finalVal];
+			setRoles(next);
+			dispatchSync(next, locations, experiences);
+		}
+		setCustomRole("");
+		setShowRoleSuggestions(false);
+	};
+
+	const selectLocationSuggestion = (suggestion: string) => {
+		let finalVal = suggestion;
+		if (suggestion.startsWith('Add "') && suggestion.endsWith('"')) {
+			finalVal = suggestion.slice(5, -1);
+		}
+		if (finalVal && !locations.includes(finalVal)) {
+			const next = [...locations, finalVal];
+			setLocations(next);
+			dispatchSync(roles, next, experiences);
+		}
+		setCustomLoc("");
+		setShowLocationSuggestions(false);
+	};
+
+	const handleRoleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (!showRoleSuggestions) return;
+
+		if (e.key === "ArrowDown") {
+			e.preventDefault();
+			setActiveRoleIndex((prev) => (prev + 1) % roleSuggestions.length);
+		} else if (e.key === "ArrowUp") {
+			e.preventDefault();
+			setActiveRoleIndex((prev) => (prev - 1 + roleSuggestions.length) % roleSuggestions.length);
+		} else if (e.key === "Enter") {
+			e.preventDefault();
+			if (roleSuggestions[activeRoleIndex]) {
+				selectRoleSuggestion(roleSuggestions[activeRoleIndex]);
+			}
+		} else if (e.key === "Escape") {
+			setShowRoleSuggestions(false);
+		}
+	};
+
+	const handleLocationKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+		if (!showLocationSuggestions) return;
+
+		if (e.key === "ArrowDown") {
+			e.preventDefault();
+			setActiveLocationIndex((prev) => (prev + 1) % locationSuggestions.length);
+		} else if (e.key === "ArrowUp") {
+			e.preventDefault();
+			setActiveLocationIndex((prev) => (prev - 1 + locationSuggestions.length) % locationSuggestions.length);
+		} else if (e.key === "Enter") {
+			e.preventDefault();
+			if (locationSuggestions[activeLocationIndex]) {
+				selectLocationSuggestion(locationSuggestions[activeLocationIndex]);
+			}
+		} else if (e.key === "Escape") {
+			setShowLocationSuggestions(false);
+		}
 	};
 
 	// ---- Trigger dynamic sweep ----
@@ -324,8 +549,10 @@ export default function CommandCenterPage() {
 								<span className="text-[10px] font-bold uppercase tracking-widest text-text-3">
 									Target Roles
 								</span>
+								
+								{/* Pill List of Roles */}
 								<div className="flex flex-wrap gap-2">
-									{AVAILABLE_ROLES.map((role) => {
+									{Array.from(new Set([...AVAILABLE_ROLES, ...roles])).map((role) => {
 										const active = roles.includes(role);
 										return (
 											<button
@@ -341,6 +568,54 @@ export default function CommandCenterPage() {
 											</button>
 										);
 									})}
+								</div>
+
+								{/* Add Custom Role with Autocomplete */}
+								<div className="relative max-w-sm mt-3">
+									<form onSubmit={addCustomRole} className="flex gap-2">
+										<input
+											type="text"
+											value={customRole}
+											onChange={(e) => handleRoleInputChange(e.target.value)}
+											onKeyDown={handleRoleKeyDown}
+											onFocus={() => {
+												if (customRole.trim().length >= 3) setShowRoleSuggestions(true);
+											}}
+											placeholder="Search & add target role (e.g. Backend Engineer)..."
+											className="flex-1 rounded-md px-3 h-8 text-xs font-medium focus:outline-none transition-all surface-3 border border-subtle text-text-1 focus:border-strong focus:bg-white/[0.02]"
+										/>
+										<button
+											type="submit"
+											className="px-3 h-8 rounded-md text-xs font-bold transition-all bg-white/5 hover:bg-white/[0.08] border border-subtle text-text-1 flex items-center justify-center"
+										>
+											<Plus size={13} />
+										</button>
+									</form>
+
+									{/* Autocomplete suggestions */}
+									{showRoleSuggestions && roleSuggestions.length > 0 && (
+										<div
+											ref={roleSuggestionsRef}
+											className="absolute top-9 left-0 right-0 z-50 rounded-lg border border-subtle p-1 shadow-2xl backdrop-blur-xl max-h-60 overflow-y-auto"
+											style={{ background: "rgba(14, 14, 14, 0.95)" }}
+										>
+											{roleSuggestions.map((suggestion, index) => (
+												<button
+													key={suggestion}
+													type="button"
+													onClick={() => selectRoleSuggestion(suggestion)}
+													onMouseEnter={() => setActiveRoleIndex(index)}
+													className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-md transition-colors ${
+														index === activeRoleIndex
+															? "bg-mint-dim text-mint"
+															: "text-text-2 hover:bg-white/5"
+													}`}
+												>
+													{suggestion}
+												</button>
+											))}
+										</div>
+									)}
 								</div>
 							</div>
 
@@ -374,48 +649,74 @@ export default function CommandCenterPage() {
 								<span className="text-[10px] font-bold uppercase tracking-widest text-text-3">
 									Target Locations
 								</span>
-								<div className="flex flex-wrap gap-1.5 p-3 rounded-lg border border-subtle bg-white/[0.01]">
-									{locations.map((loc) => {
-										const isCustom = !DEFAULT_LOCATIONS.includes(loc);
+
+								{/* Pill List of Locations */}
+								<div className="flex flex-wrap gap-2">
+									{Array.from(new Set([...DEFAULT_LOCATIONS, ...locations])).map((loc) => {
+										const active = locations.includes(loc);
 										return (
-											<span
+											<button
 												key={loc}
-												className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all duration-150 bg-mint-dim text-mint border border-mint/20"
+												onClick={() => toggleLocation(loc)}
+												className={`px-3 py-1.5 rounded-md text-[11px] font-bold uppercase tracking-wider transition-all border duration-200 ${
+													active
+														? "bg-mint-dim text-mint border-focus"
+														: "bg-white/5 text-white/40 border-white/5 hover:bg-white/[0.08] hover:text-white/70"
+												}`}
 											>
 												{loc}
-												<button
-													onClick={() => removeLocation(loc)}
-													className="opacity-40 hover:opacity-100 transition-opacity"
-													title={`Remove ${loc}`}
-												>
-													<X size={10} />
-												</button>
-											</span>
+											</button>
 										);
 									})}
-									{locations.length === 0 && (
-										<span className="text-xs font-semibold text-text-4 py-0.5">
-											No locations specified. Defaulting to Remote India.
-										</span>
-									)}
 								</div>
 
-								{/* Add Custom Location */}
-								<form onSubmit={addCustomLocation} className="flex gap-2 max-w-sm mt-2">
-									<input
-										type="text"
-										value={customLoc}
-										onChange={(e) => setCustomLoc(e.target.value)}
-										placeholder="Add custom location (e.g. Pune, Bangalore)..."
-										className="flex-1 rounded-md px-3 h-8 text-xs font-medium focus:outline-none transition-all surface-3 border border-subtle text-text-1 focus:border-strong focus:bg-white/[0.02]"
-									/>
-									<button
-										type="submit"
-										className="px-3 h-8 rounded-md text-xs font-bold transition-all bg-white/5 hover:bg-white/[0.08] border border-subtle text-text-1 flex items-center justify-center"
-									>
-										<Plus size={13} />
-									</button>
-								</form>
+								{/* Add Custom Location with Autocomplete */}
+								<div className="relative max-w-sm mt-3">
+									<form onSubmit={addCustomLocation} className="flex gap-2">
+										<input
+											type="text"
+											value={customLoc}
+											onChange={(e) => handleLocationInputChange(e.target.value)}
+											onKeyDown={handleLocationKeyDown}
+											onFocus={() => {
+												if (customLoc.trim().length >= 3) setShowLocationSuggestions(true);
+											}}
+											placeholder="Add custom location (e.g. Pune, Bangalore)..."
+											className="flex-1 rounded-md px-3 h-8 text-xs font-medium focus:outline-none transition-all surface-3 border border-subtle text-text-1 focus:border-strong focus:bg-white/[0.02]"
+										/>
+										<button
+											type="submit"
+											className="px-3 h-8 rounded-md text-xs font-bold transition-all bg-white/5 hover:bg-white/[0.08] border border-subtle text-text-1 flex items-center justify-center"
+										>
+											<Plus size={13} />
+										</button>
+									</form>
+
+									{/* Autocomplete suggestions */}
+									{showLocationSuggestions && locationSuggestions.length > 0 && (
+										<div
+											ref={locationSuggestionsRef}
+											className="absolute top-9 left-0 right-0 z-50 rounded-lg border border-subtle p-1 shadow-2xl backdrop-blur-xl max-h-60 overflow-y-auto"
+											style={{ background: "rgba(14, 14, 14, 0.95)" }}
+										>
+											{locationSuggestions.map((suggestion, index) => (
+												<button
+													key={suggestion}
+													type="button"
+													onClick={() => selectLocationSuggestion(suggestion)}
+													onMouseEnter={() => setActiveLocationIndex(index)}
+													className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-md transition-colors ${
+														index === activeLocationIndex
+															? "bg-mint-dim text-mint"
+															: "text-text-2 hover:bg-white/5"
+													}`}
+												>
+													{suggestion}
+												</button>
+											))}
+										</div>
+									)}
+								</div>
 							</div>
 						</div>
 					</div>

@@ -439,7 +439,11 @@ Screen each job strictly based on these criteria:
 1. Salary screening: If a job's salary is undisclosed, null, 0, or missing, it MUST pass this check. ONLY reject a job if it explicitly lists a salary that is definitively lower than ₹${salaryMin}L LPA. Do NOT reject undisclosed or missing salaries under any circumstances.
 2. Seniority must align with candidate's target experience levels: ${preferredExperiences.join(", ")}. If experience level is unspecified, do not reject. But if it is explicitly outside this range (e.g. requires Senior/Lead/Principal years of experience when Senior/Lead/Principal is not in the preferred list), you MUST reject it.
 3. Role must match the candidate's target roles listed in their profile above.
-4. Location/Visa screening: If the job description explicitly states 'US Only', 'Remote (US)', 'North America Only', or requires US/EU work authorization/visas, you MUST reject the job. Only accept roles that are truly global 'Work from Anywhere', explicitly 'Remote India', or located in the candidate's preferred location.
+4. Location/Work Type screening:
+   - If the candidate's preferred locations list contains 'Remote' or 'Remote India', then roles that are 'Remote' or 'Work from Anywhere' are acceptable.
+   - If the candidate's preferred locations list does NOT contain 'Remote' or 'Remote India', you MUST reject all remote/work-from-anywhere roles.
+   - For non-remote/hybrid/on-site roles, the job location MUST match or be in one of the candidate's preferred locations (e.g. Pune).
+   - In all cases, if the job explicitly requires work authorization/visas outside India (e.g. US Only, North America Only, EU Only), you MUST reject the job.
 
 Return a JSON object with two keys:
 - "qualifying_ids": an array of external_id strings for jobs that passed all 4 criteria.
@@ -721,12 +725,17 @@ export async function conductGlobalSweep(
 	);
 	onProgress?.(10, `Searching Google Jobs & remote boards for: ${roles.slice(0, 2).join(", ")}...`);
 
+	const hasRemotePreference = preferredLocations.some((loc) => {
+		const l = loc.toLowerCase();
+		return l.includes("remote") || l.includes("anywhere") || l.includes("worldwide");
+	});
+
 	// ── STEP 1–3: Fetch from all sources (Serper gets locations from profile)
 	const [serperResult, remoteOKResult, remotiveResult] =
 		await Promise.allSettled([
 			fetchSerper(roles, preferredLocations),
-			fetchRemoteOK(roles),
-			fetchRemotive(roles),
+			hasRemotePreference ? fetchRemoteOK(roles) : Promise.resolve([]),
+			hasRemotePreference ? fetchRemotive(roles) : Promise.resolve([]),
 		]);
 
 	if (serperResult.status === "rejected")
@@ -866,14 +875,20 @@ export async function conductGlobalSweep(
 
 		// ── Upsert to Supabase
 		try {
+			const isRemoteSource = job.source === "remoteok" || job.source === "remotive";
+			const locLower = (job.location ?? "").toLowerCase();
+			const isRemote = isRemoteSource || locLower.includes("remote") || locLower.includes("anywhere") || locLower.includes("worldwide") || locLower.includes("work from home") || locLower.includes("wfh");
+			const isHybrid = locLower.includes("hybrid");
+			const remoteStatus = isRemote ? "Remote" : isHybrid ? "Hybrid" : "On-site";
+
 			const { error } = await admin.from("jobs").insert({
 				company: { name: job.company, size: "Startup", industry: "Technology" },
 				role: job.title,
 				experience_level: (preferredExperiences[0] || "Entry-level") as any,
 				job_type: "Full-time",
 				pay: { min: 0, max: 0, currency: "INR" },
-				remote_status: "Remote",
-				location: job.location || "Remote",
+				remote_status: remoteStatus,
+				location: job.location || (isRemote ? "Remote" : "India"),
 				tech_stack: job.tags.slice(0, 10),
 				match_score: matchScore,
 				match_explanation: matchLogic,

@@ -178,4 +178,4 @@ Personal open-source project. Fork freely and adapt it for your own job hunt.
 
 ---
 
-<p align="center">Built with 👻 by <a href="https://github.com/DivineDB">Divyansh Baghel</a></p>
+<p align="center">Built by <a href="https://github.com/DivineDB">Divyansh Baghel</a></p>
