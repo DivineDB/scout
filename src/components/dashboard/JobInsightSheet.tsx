@@ -441,7 +441,7 @@ export function JobInsightSheet({
 	return (
 		<Sheet open={open} onOpenChange={(v) => !v && onClose()}>
 			<SheetContent
-				className="flex flex-col outline-none w-[90vw] max-w-[440px] p-0 sm:max-w-[440px]"
+				className="flex flex-col outline-none w-full sm:max-w-[440px] p-0"
 				style={{
 					background: "var(--surface-0)",
 					borderLeft: `1px solid ${BORDER_DEFAULT}`,
@@ -825,55 +825,55 @@ export function JobInsightSheet({
 
 				{/* ── Floating Action Bar ─────────────────────────────────── */}
 					<div
-						className="sticky bottom-0 w-full z-50 bg-[var(--surface-1)]/90 backdrop-blur-md border-t border-[var(--border-subtle)] p-4 sm:p-6 flex justify-between items-center shrink-0"
+						className="sticky bottom-0 w-full z-50 bg-[var(--surface-1)]/90 backdrop-blur-md border-t border-[var(--border-subtle)] px-3 sm:px-4 py-3 flex justify-between items-center shrink-0 gap-1.5 sm:gap-2"
 					>
 						{/* Left Side (Destructive/Secondary Actions) */}
-						<div className="flex items-center gap-1.5">
+						<div className="flex items-center gap-1">
 							<button
 								disabled={isRemoving}
 								onClick={removeJob}
 								title="Remove Job"
-								className="text-[var(--text-3)] hover:text-red-400 hover:bg-[var(--surface-3)] p-2 rounded-md transition-all disabled:opacity-40 cursor-pointer"
+								className="text-[var(--text-3)] hover:text-red-400 hover:bg-[var(--surface-3)] p-1.5 rounded-md transition-all disabled:opacity-40 cursor-pointer"
 							>
 								{isRemoving ? (
-									<Loader2 size={16} className="animate-spin" />
+									<Loader2 size={15} className="animate-spin" />
 								) : (
-									<Trash2 size={16} strokeWidth={1.5} />
+									<Trash2 size={15} strokeWidth={1.5} />
 								)}
 							</button>
 							<button
 								disabled={isRedistilling}
 								onClick={handleRedistill}
 								title="Refresh AI Analysis"
-								className="text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-3)] p-2 rounded-md transition-all disabled:opacity-40 cursor-pointer"
+								className="text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-3)] p-1.5 rounded-md transition-all disabled:opacity-40 cursor-pointer"
 							>
 								{isRedistilling ? (
-									<Loader2 size={16} className="animate-spin" />
+									<Loader2 size={15} className="animate-spin" />
 								) : (
-									<RotateCw size={16} strokeWidth={1.5} />
+									<RotateCw size={15} strokeWidth={1.5} />
 								)}
 							</button>
 						</div>
 
 						{/* Right Side (Primary & Secondary CTAs) */}
-						<div className="flex items-center gap-2.5">
+						<div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
 							<button
 								onClick={handleApply}
-								className="border border-[var(--border-subtle)] text-[var(--text-1)] px-4 py-2 rounded-md hover:border-[var(--border-strong)] bg-[var(--surface-2)] transition-all text-xs font-semibold whitespace-nowrap cursor-pointer"
+								className="border border-[var(--border-subtle)] text-[var(--text-1)] px-2.5 sm:px-3 py-1.5 rounded-md hover:border-[var(--border-strong)] bg-[var(--surface-2)] transition-all text-[10px] sm:text-[11px] font-semibold whitespace-nowrap cursor-pointer shrink"
 							>
-								Copy Intro &amp; Apply
+								Intro &amp; Apply
 							</button>
 							<button
 								disabled={isPromoting}
 								onClick={promoteJobToSerious}
-								className="flex items-center gap-1.5 bg-mint text-[#050505] font-semibold px-5 py-2 rounded-md hover:bg-mint-strong transition-all duration-150 transform hover:-translate-y-[1px] shadow-[0_0_15px_var(--mint-dim)] disabled:opacity-40 text-xs font-semibold whitespace-nowrap cursor-pointer"
+								className="flex items-center gap-1 bg-mint text-[#050505] font-semibold px-2.5 sm:px-3 py-1.5 rounded-md hover:bg-mint-strong transition-all duration-150 transform hover:-translate-y-[1px] shadow-[0_0_15px_var(--mint-dim)] disabled:opacity-40 text-[10px] sm:text-[11px] font-semibold whitespace-nowrap cursor-pointer shrink"
 							>
 								{isPromoting ? (
-									<Loader2 size={14} className="animate-spin text-[#050505]" />
+									<Loader2 size={12} className="animate-spin text-[#050505]" />
 								) : (
-									<Target size={14} strokeWidth={1.5} />
+									<Target size={12} strokeWidth={1.5} />
 								)}
-								<span>{isPromoting ? "Promoting…" : "Promote to Serious"}</span>
+								<span>{isPromoting ? "Promoting…" : "Promote"}</span>
 							</button>
 						</div>
 					</div>
