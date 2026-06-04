@@ -521,200 +521,18 @@ export function JobInsightSheet({
 						</div>
 					)}
 
-					{/* ════════════════════════════════════════════════════════
-					    ── OUTREACH HOOKS — Multi-channel section ────────────
-					    ════════════════════════════════════════════════════════ */}
+					{/* ── 1. Job Description (always visible) ───────────────── */}
 					<section>
-						<SectionLabel>Outreach Hook</SectionLabel>
-
-						<div
-							className="rounded-lg overflow-hidden"
-							style={{
-								background: "rgba(255,255,255,0.02)",
-								border: `1px solid ${BORDER_DEFAULT}`,
-							}}
+						<SectionLabel>About the Role</SectionLabel>
+						<p
+							className="text-sm leading-relaxed font-medium"
+							style={{ color: TEXT_2 }}
 						>
-							{/* ── Scout badge + title ────────────────────────── */}
-							<div
-								className="flex items-center gap-1.5 px-4 pt-4 pb-2"
-							>
-								<span className="flex h-3 w-fit px-1 items-center justify-center rounded-sm bg-foreground text-[7px] font-black text-background uppercase">
-									Scout
-								</span>
-								<span className="text-[10px] font-black uppercase tracking-widest text-foreground">
-									Channel Hook
-								</span>
-							</div>
-
-							{/* ── Channel tab switcher ──────────────────────── */}
-							<div
-								className="flex items-center gap-1.5 px-4 pb-3 border-b border-[var(--border-subtle)]"
-							>
-								{CHANNELS.map((ch) => {
-									const isActive = channel === ch.value;
-									const hasCached = !!hooksByChannel[ch.value];
-									return (
-										<button
-											key={ch.value}
-											onClick={() => setChannel(ch.value)}
-											className={`relative flex items-center gap-1.5 font-bold transition-all duration-150 ease-out ${
-												isActive
-													? "bg-mint-dim text-mint ring-1 ring-mint-strong text-xs px-3 py-1 rounded-md"
-													: "text-[var(--text-3)] hover:text-[var(--text-1)] text-xs px-3 py-1"
-											}`}
-										>
-											<span className="text-[9px]">{ch.icon}</span>
-											{ch.label}
-											{/* Dot indicator when cached */}
-											{hasCached && (
-												<span
-													className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-mint"
-												/>
-											)}
-										</button>
-									);
-								})}
-							</div>
-
-							{/* ── Hook content area ────────────────────────── */}
-							<div className="px-4 pb-4 pt-3 min-h-[80px]">
-								{activeHook ? (
-									<div className="space-y-2">
-										<p
-											className="text-sm leading-relaxed font-medium"
-											style={{ color: TEXT_2 }}
-										>
-											{activeHook}
-										</p>
-										<div className="flex items-center gap-2 pt-1">
-											<button
-												onClick={() => copyHook(channel)}
-												className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-md transition-all hover:opacity-80"
-												style={{
-													background: MINT_DIM,
-													color: MINT,
-													border: `1px solid rgba(16,185,129,0.2)`,
-												}}
-											>
-												{copiedChannel === channel ? (
-													<><Check size={10} /> Copied</>
-												) : (
-													<><Copy size={10} /> Copy</>
-												)}
-											</button>
-											<button
-												onClick={() => generateHook(channel)}
-												disabled={isGeneratingHook}
-												className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-md transition-all hover:opacity-80 disabled:opacity-40"
-												style={{
-													background: "rgba(255,255,255,0.04)",
-													color: TEXT_3,
-													border: `1px solid ${BORDER_DEFAULT}`,
-												}}
-											>
-												{isGeneratingHook ? (
-													<><Loader2 size={9} className="animate-spin" /> Generating…</>
-												) : (
-													"↻ Regenerate"
-												)}
-											</button>
-										</div>
-									</div>
-								) : (
-									<div className="flex flex-col items-center justify-center gap-3 py-4">
-										<p
-											className="text-[11px] font-medium text-center"
-											style={{ color: TEXT_3 }}
-										>
-											No {channel} hook yet
-										</p>
-										<button
-											onClick={() => generateHook(channel)}
-											disabled={isGeneratingHook}
-											className="flex items-center gap-2 text-[11px] font-bold px-4 py-2 rounded-md transition-all hover:opacity-90 disabled:opacity-40"
-											style={{
-												background: MINT_DIM,
-												color: MINT,
-												border: `1px solid rgba(16,185,129,0.25)`,
-											}}
-										>
-											{isGeneratingHook ? (
-												<><Loader2 size={11} className="animate-spin" /> Generating…</>
-											) : (
-												<>✦ Generate {CHANNELS.find((c) => c.value === channel)?.label} Hook</>
-											)}
-										</button>
-									</div>
-								)}
-							</div>
-						</div>
+							{job.description}
+						</p>
 					</section>
 
-					{/* ════════════════════════════════════════════════════════
-					    ── PROOF OF WORK — Relational Projects ───────────
-					    ════════════════════════════════════════════════════════ */}
-					<section>
-						<SectionLabel>Proof of Work</SectionLabel>
-
-						{portfolioMapping && portfolioMapping.length > 0 ? (
-							<div
-								className="rounded-lg p-4 space-y-4 border border-[var(--border-subtle)] bg-[var(--surface-2)]"
-							>
-								{portfolioMapping.map((project, i) => (
-									<div key={i} className="flex items-start gap-3">
-										<FolderGit2
-											size={16}
-											className="mt-0.5 shrink-0 text-mint"
-											strokeWidth={1.5}
-										/>
-										<div className="space-y-1">
-											<h4 className="text-xs font-black text-[var(--text-1)] uppercase tracking-wider">
-												{project.project_name}
-											</h4>
-											<p className="text-sm leading-relaxed text-[var(--text-2)] font-medium">
-												{project.justification}
-											</p>
-										</div>
-									</div>
-								))}
-
-								<button
-									onClick={mapPortfolio}
-									disabled={isMappingPortfolio}
-									className="mt-2 w-full flex items-center justify-center gap-2 rounded-md py-1.5 text-[10px] font-bold transition-all hover:opacity-80 disabled:opacity-40 border border-[var(--border-subtle)] text-[var(--text-3)] bg-white/5"
-								>
-									{isMappingPortfolio ? (
-										<><Loader2 size={10} className="animate-spin" /> Remapping…</>
-									) : (
-										"↻ Remap Proof of Work"
-									)}
-								</button>
-							</div>
-						) : (
-							<div
-								className="rounded-lg p-4 flex flex-col items-center justify-center gap-3 border border-[var(--border-subtle)] bg-[var(--surface-2)]"
-							>
-								<p className="text-xs font-medium text-[var(--text-3)] text-center">
-									No portfolio projects mapped yet
-								</p>
-								<button
-									onClick={mapPortfolio}
-									disabled={isMappingPortfolio}
-									className="bg-mint-dim text-mint text-xs px-3 py-1.5 rounded-md hover:opacity-90 transition-all font-bold border border-mint/20 flex items-center justify-center gap-1.5 w-full"
-								>
-									{isMappingPortfolio ? (
-										<><Loader2 size={12} className="animate-spin text-mint" /> Mapping Proof of Work…</>
-									) : (
-										<>✦ Map Proof of Work</>
-									)}
-								</button>
-							</div>
-						)}
-					</section>
-
-					{/* ════════════════════════════════════════════════════════
-					    ── THE REALITY CHECK — Skill Gaps & Objection Shield ──
-					    ════════════════════════════════════════════════════════ */}
+					{/* ── 2. Gaps and Skills Needed (Reality Check) ─────────── */}
 					{hasDistilledData && (
 						<section className="space-y-4">
 							<SectionLabel>The Reality Check</SectionLabel>
@@ -795,7 +613,6 @@ export function JobInsightSheet({
 														</p>
 													</div>
 												))}
-												{/* Regenerate button */}
 												<button
 													onClick={generateShield}
 													disabled={isLoadingObjections}
@@ -811,6 +628,132 @@ export function JobInsightSheet({
 						</section>
 					)}
 
+					{/* ── 3. Outreach Hook Generator ────────────────────────── */}
+					<section>
+						<SectionLabel>Outreach Hook</SectionLabel>
+
+						<div
+							className="rounded-lg overflow-hidden"
+							style={{
+								background: "rgba(255,255,255,0.02)",
+								border: `1px solid ${BORDER_DEFAULT}`,
+							}}
+						>
+							{/* Scout badge + title */}
+							<div
+								className="flex items-center gap-1.5 px-4 pt-4 pb-2"
+							>
+								<span className="flex h-3 w-fit px-1 items-center justify-center rounded-sm bg-foreground text-[7px] font-black text-background uppercase">
+									Scout
+								</span>
+								<span className="text-[10px] font-black uppercase tracking-widest text-foreground">
+									Channel Hook
+								</span>
+							</div>
+
+							{/* Channel tab switcher */}
+							<div
+								className="flex items-center gap-1.5 px-4 pb-3 border-b border-[var(--border-subtle)]"
+							>
+								{CHANNELS.map((ch) => {
+									const isActive = channel === ch.value;
+									const hasCached = !!hooksByChannel[ch.value];
+									return (
+										<button
+											key={ch.value}
+											onClick={() => setChannel(ch.value)}
+											className={`relative flex items-center gap-1.5 font-bold transition-all duration-150 ease-out ${
+												isActive
+													? "bg-mint-dim text-mint ring-1 ring-mint-strong text-xs px-3 py-1 rounded-md"
+													: "text-[var(--text-3)] hover:text-[var(--text-1)] text-xs px-3 py-1"
+											}`}
+										>
+											<span className="text-[9px]">{ch.icon}</span>
+											{ch.label}
+											{hasCached && (
+												<span
+													className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-mint"
+												/>
+											)}
+										</button>
+									);
+								})}
+							</div>
+
+							{/* Hook content area */}
+							<div className="px-4 pb-4 pt-3 min-h-[80px]">
+								{activeHook ? (
+									<div className="space-y-2">
+										<p
+											className="text-sm leading-relaxed font-medium"
+											style={{ color: TEXT_2 }}
+										>
+											{activeHook}
+										</p>
+										<div className="flex items-center gap-2 pt-1">
+											<button
+												onClick={() => copyHook(channel)}
+												className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-md transition-all hover:opacity-80"
+												style={{
+													background: MINT_DIM,
+													color: MINT,
+													border: `1px solid rgba(16,185,129,0.2)`,
+												}}
+											>
+												{copiedChannel === channel ? (
+													<><Check size={10} /> Copied</>
+												) : (
+													<><Copy size={10} /> Copy</>
+												)}
+											</button>
+											<button
+												onClick={() => generateHook(channel)}
+												disabled={isGeneratingHook}
+												className="flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-md transition-all hover:opacity-80 disabled:opacity-40"
+												style={{
+													background: "rgba(255,255,255,0.04)",
+													color: TEXT_3,
+													border: `1px solid ${BORDER_DEFAULT}`,
+												}}
+											>
+												{isGeneratingHook ? (
+													<><Loader2 size={9} className="animate-spin" /> Generating…</>
+												) : (
+													"↻ Regenerate"
+												)}
+											</button>
+										</div>
+									</div>
+								) : (
+									<div className="flex flex-col items-center justify-center gap-3 py-4">
+										<p
+											className="text-[11px] font-medium text-center"
+											style={{ color: TEXT_3 }}
+										>
+											No {channel} hook yet
+										</p>
+										<button
+											onClick={() => generateHook(channel)}
+											disabled={isGeneratingHook}
+											className="flex items-center gap-2 text-[11px] font-bold px-4 py-2 rounded-md transition-all hover:opacity-90 disabled:opacity-40"
+											style={{
+												background: MINT_DIM,
+												color: MINT,
+												border: `1px solid rgba(16,185,129,0.25)`,
+											}}
+										>
+											{isGeneratingHook ? (
+												<><Loader2 size={11} className="animate-spin" /> Generating…</>
+											) : (
+												<>✦ Generate {CHANNELS.find((c) => c.value === channel)?.label} Hook</>
+											)}
+										</button>
+									</div>
+								)}
+							</div>
+						</div>
+					</section>
+
 					{/* ── Resume Additions ── */}
 					{hasDistilledData &&
 						distilled.tailored_bullets &&
@@ -825,7 +768,7 @@ export function JobInsightSheet({
 							</section>
 						)}
 
-					{/* ── Fallback: About the Role (no distilled data) ─────── */}
+					{/* ── Requirements & fallback (if no distilled data) ── */}
 					{!hasDistilledData && !isPending && (
 						<>
 							<section>
@@ -866,24 +809,16 @@ export function JobInsightSheet({
 								</div>
 							</section>
 
-							<section>
-								<SectionLabel>About the Role</SectionLabel>
-								<p
-									className="text-sm leading-relaxed font-medium"
-									style={{ color: TEXT_2 }}
-								>
-									{job.description}
-								</p>
-							</section>
-
-							<section>
-								<SectionLabel>Requirements</SectionLabel>
-								<ul className="space-y-1.5">
-									{job.requirements.map((r, i) => (
-										<CheckRow key={i} text={r} />
-									))}
-								</ul>
-							</section>
+							{job.requirements && job.requirements.length > 0 && (
+								<section>
+									<SectionLabel>Requirements</SectionLabel>
+									<ul className="space-y-1.5">
+										{job.requirements.map((r, i) => (
+											<CheckRow key={i} text={r} />
+										))}
+									</ul>
+								</section>
+							)}
 						</>
 					)}
 				</div>

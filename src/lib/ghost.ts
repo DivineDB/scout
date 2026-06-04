@@ -259,6 +259,11 @@ async function fetchSerper(
 						if (seen.has(id)) continue;
 						seen.add(id);
 
+						const fallbackCity = locations.find(l => !["On-site", "Hybrid", "Remote", "Remote India"].includes(l)) || "Pune";
+						const displayLoc = (cleanLoc === "On-site" || cleanLoc === "Hybrid") 
+							? `${fallbackCity} (${cleanLoc})` 
+							: (cleanLoc || fallbackCity);
+
 						allJobs.push({
 							external_id: id,
 							title: String(result.title ?? cleanRole),
@@ -270,7 +275,7 @@ async function fetchSerper(
 							posted_at: new Date().toISOString(),
 							tags: [cleanRole],
 							salary_info: undefined,
-							location: "Remote / Pune",
+							location: displayLoc,
 							source: "serper",
 						});
 					}
@@ -763,8 +768,29 @@ export async function conductGlobalSweep(
 	console.log(`[Ghost] ${deduped.length} unique jobs from all sources`);
 	onProgress?.(35, `Deduplicated ${deduped.length} unique jobs. Applying hard gating...`);
 
-	// ── STEP 4: Hard Gate filter (age only)
-	const gated = deduped.filter((j) => passesHardGate(j));
+	// ── STEP 4: Hard Gate filter (age and seniority keywords)
+	const gated = deduped.filter((j) => {
+		if (!passesHardGate(j)) return false;
+
+		const lowerTitle = j.title.toLowerCase();
+		const hasSeniorPreferred = preferredExperiences.some(exp => exp.toLowerCase().includes("senior"));
+		const hasLeadPreferred = preferredExperiences.some(exp => exp.toLowerCase().includes("lead") || exp.toLowerCase().includes("principal") || exp.toLowerCase().includes("staff") || exp.toLowerCase().includes("director") || exp.toLowerCase().includes("manager"));
+
+		if (!hasSeniorPreferred) {
+			const forbidden = ["senior", "sr.", "sr ", "lead", "principal", "staff", "director", "vp", "head", "manager"];
+			if (forbidden.some(kw => lowerTitle.includes(kw))) {
+				console.log(`[Ghost] Hard gate reject seniority (Senior/Lead keywords in non-senior profile) for: ${j.title}`);
+				return false;
+			}
+		} else if (!hasLeadPreferred) {
+			const forbidden = ["lead", "principal", "staff", "director", "vp", "head", "manager"];
+			if (forbidden.some(kw => lowerTitle.includes(kw))) {
+				console.log(`[Ghost] Hard gate reject seniority (Lead keywords in senior non-lead profile) for: ${j.title}`);
+				return false;
+			}
+		}
+		return true;
+	});
 	console.log(`[Ghost] ${gated.length} passed hard gate (age < 48h)`);
 	onProgress?.(45, `Filtering ${gated.length} active listings through rapid 8B Llama Classifier...`);
 
