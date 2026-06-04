@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { Loader2, Shield, ChevronDown, Copy, Check, FolderGit2, Trash2, RotateCw, Target } from "lucide-react";
+import { Loader2, Shield, ChevronDown, Copy, Check, Trash2, RotateCw, Target } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 // ─── Design tokens ─────────────────────────────────────────────────────────────
