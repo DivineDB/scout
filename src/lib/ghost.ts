@@ -142,18 +142,59 @@ async function fetchSerper(
 
 	console.log(`[Ghost] Fetching from Serper.dev (Google Jobs) — locations: ${locations.join(", ")}`);
 
-	// Generate combinations of roles and locations: "Role Location"
-	const queries: string[] = [];
+	// Generate smart combinations of roles and locations
+	const queries: { q: string; role: string; loc: string; city?: string }[] = [];
+	const workTypes = locations.filter(l => ["Remote", "Remote India", "Hybrid", "On-site"].includes(l));
+	const targetCities = locations.filter(l => !["Remote", "Remote India", "Hybrid", "On-site"].includes(l));
+
 	for (const role of roles) {
-		for (const loc of locations) {
-			queries.push(`${role} ${loc}`);
+		if (targetCities.length > 0) {
+			for (const city of targetCities) {
+				const localWorkTypes = workTypes.filter(w => w !== "Remote" && w !== "Remote India");
+				if (localWorkTypes.length > 0) {
+					for (const wt of localWorkTypes) {
+						queries.push({
+							q: `${role} ${city} ${wt}`,
+							role,
+							loc: wt,
+							city
+						});
+					}
+				}
+				// Always query the city itself to capture general local jobs
+				queries.push({
+					q: `${role} ${city}`,
+					role,
+					loc: city,
+					city
+				});
+			}
+			// If remote is also preferred, query remote separately
+			const remoteTypes = workTypes.filter(w => w === "Remote" || w === "Remote India");
+			for (const rt of remoteTypes) {
+				queries.push({
+					q: `${role} ${rt}`,
+					role,
+					loc: rt
+				});
+			}
+		} else {
+			// No city specified, query work types directly
+			for (const loc of locations) {
+				queries.push({
+					q: `${role} ${loc}`,
+					role,
+					loc
+				});
+			}
 		}
 	}
 
 	const allJobs: RawJob[] = [];
 	const seen = new Set<string>();
 
-	for (const q of queries) {
+	for (const queryObj of queries) {
+		const q = queryObj.q;
 		let jobsFetchedForQuery = false;
 
 		// ── Primary: Strict POST to /jobs
@@ -212,19 +253,11 @@ async function fetchSerper(
 
 		// ── ATS fallback dork on /search if /jobs failed (any error or non-ok)
 		if (!jobsFetchedForQuery) {
-			// Split q into role and location (it's in the format "Role Location")
-			let cleanRole = q;
-			let cleanLoc = "Remote India";
-			for (const loc of locations) {
-				if (q.endsWith(loc)) {
-					cleanRole = q.slice(0, -loc.length).trim();
-					cleanLoc = loc;
-					break;
-				}
-			}
-
-			// Spec-exact dork format: target premium ATS platforms
-			const dorkQuery = `(site:jobs.lever.co OR site:boards.greenhouse.io OR site:jobs.ashbyhq.com) "${cleanRole}" ("${cleanLoc}" OR "Anywhere")`;
+			const locTerm = queryObj.city ? `"${queryObj.city}"` : `"${queryObj.loc}"`;
+			const isRemote = queryObj.loc.toLowerCase().includes("remote");
+			const dorkQuery = isRemote
+				? `(site:jobs.lever.co OR site:boards.greenhouse.io OR site:jobs.ashbyhq.com) "${queryObj.role}" ("Remote" OR "Anywhere")`
+				: `(site:jobs.lever.co OR site:boards.greenhouse.io OR site:jobs.ashbyhq.com) "${queryObj.role}" ${locTerm}`;
 			console.log(`[Ghost] Serper ATS fallback dork: ${dorkQuery}`);
 
 			try {
@@ -259,10 +292,10 @@ async function fetchSerper(
 						if (seen.has(id)) continue;
 						seen.add(id);
 
-						const fallbackCity = locations.find(l => !["On-site", "Hybrid", "Remote", "Remote India"].includes(l)) || "Pune";
-						const displayLoc = (cleanLoc === "On-site" || cleanLoc === "Hybrid") 
-							? `${fallbackCity} (${cleanLoc})` 
-							: (cleanLoc || fallbackCity);
+						let displayLoc = queryObj.city || queryObj.loc;
+						if (queryObj.city && ["On-site", "Hybrid"].includes(queryObj.loc)) {
+							displayLoc = `${queryObj.city} (${queryObj.loc})`;
+						}
 
 						// Extract real company name from title (e.g. "Designer @ Mirage" or "Designer - Mirage")
 						const rawTitle = String(result.title ?? cleanRole);
@@ -302,14 +335,14 @@ async function fetchSerper(
 							description: (cleanedSnippet || rawSnippet).substring(0, 800),
 							url: link,
 							posted_at: new Date().toISOString(),
-							tags: [cleanRole],
+							tags: [queryObj.role],
 							salary_info: undefined,
 							location: displayLoc,
 							source: "serper",
 						});
 					}
 					console.log(
-						`[Ghost] ATS fallback found ${organicResults.length} results for: ${cleanRole}`,
+						`[Ghost] ATS fallback found ${organicResults.length} results for: ${queryObj.role}`,
 					);
 				} else {
 					console.warn(
@@ -318,7 +351,7 @@ async function fetchSerper(
 				}
 			} catch (err) {
 				console.warn(
-					`[Ghost] ATS fallback request failed for "${cleanRole}": ${err}`,
+					`[Ghost] ATS fallback request failed for "${queryObj.role}": ${err}`,
 				);
 			}
 		}
@@ -457,7 +490,7 @@ async function stage1_classify(
 		const snippets = chunk
 			.map(
 				(j, i) =>
-					`${i + 1}. ID:${j.external_id} | ${j.title} @ ${j.company} | Tags:${j.tags.join(",")} | ${j.description.substring(0, 200)}`,
+					`${i + 1}. ID:${j.external_id} | ${j.title} @ ${j.company} | Location: ${j.location} | Tags:${j.tags.join(",")} | ${j.description.substring(0, 200)}`,
 			)
 			.join("\n");
 
@@ -476,7 +509,7 @@ Screen each job strictly based on these criteria:
 4. Location/Work Type screening:
    - If the candidate's preferred locations list contains 'Remote' or 'Remote India', then roles that are 'Remote' or 'Work from Anywhere' are acceptable.
    - If the candidate's preferred locations list does NOT contain 'Remote' or 'Remote India', you MUST reject all remote/work-from-anywhere roles.
-   - For non-remote/hybrid/on-site roles, the job location MUST match or be in one of the candidate's preferred locations (e.g. Pune).
+   - For non-remote/hybrid/on-site roles, the job location MUST match or be in one of the candidate's preferred locations (e.g. Pune). Be highly lenient for jobs in Pune (the preferred local city) — do not reject them for minor mismatches, only reject if they are completely unrelated roles or require way too much seniority.
    - In all cases, if the job explicitly requires work authorization/visas outside India (e.g. US Only, North America Only, EU Only), you MUST reject the job.
 
 Return a JSON object with two keys:
@@ -574,11 +607,12 @@ Return a JSON object with EXACTLY these keys:
   "tailored_bullets": ["<ATS-optimised resume bullet 1 that maps candidate's experience to this JD>", ...]
 }
 
-Scoring guide:
+Scoring guide & Local Boost:
 - 90–100: Perfect alignment (role, stack, remote/India, salary, seniority)
 - 80–89: Strong fit, minor gaps
 - 70–79: Relevant but noticeable mismatches
 - <70: Weak match
+- CRITICAL LOCAL BOOST: If the job's location is on-site or hybrid in Pune (one of the candidate's preferred cities), you MUST reduce strictness and give the match score a +15 to +20 points boost! Even if there are skill gaps, salary mismatches, or minor experience gaps, rate it at least 80-95% (since local on-site opportunities in Pune are extremely rare and highly valued). Explain this boost in your match_logic.
 
 For gaps: list specific missing skills or experience. If none, return empty array.
 For hooks: Do not write generic hooks like 'I am impressed by your company.' Generate a 'Kinetic Hook' (max 3 sentences). It must reference a specific technology or problem mentioned in the JD, and tie it directly to my background as a Design Engineer building AI SaaS (e.g., mention my experience building agents with Next.js/Prisma or UI/UX). It must read like a sharp, direct message to a technical hiring manager.
@@ -809,7 +843,7 @@ export async function conductGlobalSweep(
 	console.log(`[Ghost] ${deduped.length} unique jobs from all sources`);
 	onProgress?.(35, `Deduplicated ${deduped.length} unique jobs. Applying hard gating...`);
 
-	// ── STEP 4: Hard Gate filter (age and seniority keywords)
+	// ── STEP 4: Hard Gate filter (age, seniority keywords, and strict location mention check)
 	const gated = deduped.filter((j) => {
 		if (!passesHardGate(j)) return false;
 
@@ -830,6 +864,55 @@ export async function conductGlobalSweep(
 				return false;
 			}
 		}
+
+		// ── Strict Location Gating ──
+		const locLower = (j.location ?? "").toLowerCase();
+		const descLower = (j.description ?? "").toLowerCase();
+
+		const workTypes = preferredLocations.filter(l => ["Remote", "Remote India", "Hybrid", "On-site"].includes(l));
+		const targetCities = preferredLocations.filter(l => !["Remote", "Remote India", "Hybrid", "On-site"].includes(l));
+
+		const hasRemotePref = workTypes.some(w => w.toLowerCase().includes("remote"));
+		const hasHybridPref = workTypes.includes("Hybrid");
+		const hasOnSitePref = workTypes.includes("On-site");
+
+		const isRemoteSource = j.source === "remoteok" || j.source === "remotive";
+		const isJobRemote = isRemoteSource || locLower.includes("remote") || locLower.includes("anywhere") || locLower.includes("worldwide") || locLower.includes("work from home") || locLower.includes("wfh");
+		const isJobHybrid = locLower.includes("hybrid") || descLower.includes("hybrid");
+
+		if (isJobRemote) {
+			if (!hasRemotePref) {
+				console.log(`[Ghost] Hard gate reject location (Remote job, but user does not prefer remote) for: ${j.title}`);
+				return false;
+			}
+		} else {
+			// Local job (On-site or Hybrid)
+			if (targetCities.length > 0) {
+				// The job must mention at least one of the target cities in location, title, or description.
+				const matchesCity = targetCities.some(city => {
+					const c = city.toLowerCase();
+					return locLower.includes(c) || lowerTitle.includes(c) || descLower.includes(c);
+				});
+
+				if (!matchesCity) {
+					console.log(`[Ghost] Hard gate reject location (Local job, but does not match target cities: ${targetCities.join(", ")}) for: ${j.title}`);
+					return false;
+				}
+			}
+
+			// If work types specify modes (On-site / Hybrid), enforce them
+			if (workTypes.includes("On-site") || workTypes.includes("Hybrid")) {
+				if (isJobHybrid && !hasHybridPref) {
+					console.log(`[Ghost] Hard gate reject location (Hybrid job, but user does not prefer hybrid) for: ${j.title}`);
+					return false;
+				}
+				if (!isJobHybrid && !hasOnSitePref) {
+					console.log(`[Ghost] Hard gate reject location (On-site job, but user does not prefer on-site) for: ${j.title}`);
+					return false;
+				}
+			}
+		}
+
 		return true;
 	});
 	console.log(`[Ghost] ${gated.length} passed hard gate (age < 48h)`);

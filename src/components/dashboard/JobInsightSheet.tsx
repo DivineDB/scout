@@ -442,7 +442,7 @@ export function JobInsightSheet({
 	return (
 		<Sheet open={open} onOpenChange={(v) => !v && onClose()}>
 			<SheetContent
-				className="flex flex-col outline-none w-[90vw] max-w-[440px] p-0 sm:max-w-[440px]"
+				className="flex flex-col outline-none w-full sm:max-w-[440px] p-0"
 				style={{
 					background: "var(--surface-0)",
 					borderLeft: `1px solid ${BORDER_DEFAULT}`,
@@ -772,12 +772,13 @@ export function JobInsightSheet({
 
 				</div>
 
-				{/* ── Floating Action Bar ─────────────────────────────────── */}
+
+				{/* ── Floating Action Bar ──────────────────────────────────────────── */}
 				<div
-					className="sticky bottom-0 w-full z-50 bg-[var(--surface-1)]/90 backdrop-blur-md border-t border-[var(--border-subtle)] px-3 py-3 flex items-center justify-between shrink-0 gap-2"
+					className="sticky bottom-0 w-full z-50 bg-[var(--surface-1)]/90 backdrop-blur-md border-t border-[var(--border-subtle)] px-3 sm:px-4 py-3 flex justify-between items-center shrink-0 gap-1.5 sm:gap-2"
 				>
-					{/* Left Side — icon buttons */}
-					<div className="flex items-center gap-1 shrink-0">
+					{/* Left Side (Destructive/Secondary Actions) */}
+					<div className="flex items-center gap-1">
 						<button
 							disabled={isRemoving}
 							onClick={removeJob}
@@ -804,25 +805,25 @@ export function JobInsightSheet({
 						</button>
 					</div>
 
-					{/* Right Side — fixed-width CTAs so they never clip */}
-					<div className="flex items-center gap-2 shrink-0">
+					{/* Right Side (Primary & Secondary CTAs) */}
+					<div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
 						<button
 							onClick={handleApply}
-							className="border border-[var(--border-subtle)] text-[var(--text-1)] w-[120px] py-1.5 rounded-md hover:border-[var(--border-strong)] bg-[var(--surface-2)] transition-all text-[10px] font-semibold whitespace-nowrap cursor-pointer text-center"
+							className="border border-[var(--border-subtle)] text-[var(--text-1)] px-2.5 sm:px-3 py-1.5 rounded-md hover:border-[var(--border-strong)] bg-[var(--surface-2)] transition-all text-[10px] sm:text-[11px] font-semibold whitespace-nowrap cursor-pointer shrink"
 						>
 							Intro &amp; Apply
 						</button>
 						<button
 							disabled={isPromoting}
 							onClick={promoteJobToSerious}
-							className="flex items-center justify-center gap-1 bg-mint text-[#050505] font-bold w-[130px] py-1.5 rounded-md hover:bg-mint-strong transition-all duration-150 shadow-[0_0_15px_var(--mint-dim)] disabled:opacity-40 text-[10px] whitespace-nowrap cursor-pointer"
+							className="flex items-center gap-1 bg-mint text-[#050505] font-semibold px-2.5 sm:px-3 py-1.5 rounded-md hover:bg-mint-strong transition-all duration-150 transform hover:-translate-y-[1px] shadow-[0_0_15px_var(--mint-dim)] disabled:opacity-40 text-[10px] sm:text-[11px] whitespace-nowrap cursor-pointer shrink"
 						>
 							{isPromoting ? (
 								<Loader2 size={12} className="animate-spin text-[#050505]" />
 							) : (
 								<Target size={12} strokeWidth={1.5} />
 							)}
-							<span>{isPromoting ? "Promoting..." : "Promote"}</span>
+							<span>{isPromoting ? "Promoting…" : "Promote"}</span>
 						</button>
 					</div>
 				</div>
