@@ -125,6 +125,7 @@ export default function CasualHuntPage() {
             <button
               onClick={handleGhostSweep}
               disabled={isSweeping}
+              suppressHydrationWarning
               className="flex items-center justify-center gap-1.5 rounded-md border border-white/[0.08] bg-white/[0.04] px-3 h-8 text-[10px] font-black uppercase tracking-widest text-white/50 transition-all duration-200 hover:bg-white/[0.08] hover:border-white/15 hover:text-white/80 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
             >
               {isSweeping ? (

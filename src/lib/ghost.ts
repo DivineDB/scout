@@ -264,13 +264,42 @@ async function fetchSerper(
 							? `${fallbackCity} (${cleanLoc})` 
 							: (cleanLoc || fallbackCity);
 
+						// Extract real company name from title (e.g. "Designer @ Mirage" or "Designer - Mirage")
+						const rawTitle = String(result.title ?? cleanRole);
+						const companyFromTitle = (() => {
+							// Try " @ Company" pattern first
+							const atMatch = rawTitle.match(/ @ (.+)$/);
+							if (atMatch) return atMatch[1].trim();
+							// Try " - Company" or " | Company" pattern
+							const dashMatch = rawTitle.match(/ [\-|] (.+)$/);
+							if (dashMatch) return dashMatch[1].trim();
+							// Fall back to displayed domain without www/TLD
+							const domain = String(result.domain ?? result.displayedLink ?? "");
+							if (domain) return domain.replace(/^www\./, "").split(".")[0];
+							return "";
+						})();
+
+						// Clean role title — strip company suffix
+						const cleanTitle = rawTitle
+							.replace(/ @ .+$/, "")
+							.replace(/ [\-|] .+$/, "")
+							.trim() || cleanRole;
+
+						// Clean snippet — strip boilerplate metadata that looks like
+						// "Product Designer, Early Career. Location. Union Square... Employment Type. Full time."
+						const rawSnippet = String(result.snippet ?? "");
+						const cleanedSnippet = rawSnippet
+							// Remove leading title repeat (common in ATS snippets)
+							.replace(/^[^.]+\.\s*Location\..*?(?:Employment Type\..*?(?:Location Type\..*?)?)?\s*/i, "")
+							// Strip "Location. City. Employment Type. Full time." patterns
+							.replace(/Location\.\s*[^.]+\.\s*(Employment Type\.\s*[^.]+\.\s*)?(Location Type\.\s*[^.]+\.\s*)?/gi, "")
+							.trim();
+
 						allJobs.push({
 							external_id: id,
-							title: String(result.title ?? cleanRole),
-							company: String(
-								result.displayedLink ?? result.domain ?? "Via ATS",
-							),
-							description: String(result.snippet ?? "").substring(0, 600),
+							title: cleanTitle,
+							company: companyFromTitle || "Unknown",
+							description: (cleanedSnippet || rawSnippet).substring(0, 800),
 							url: link,
 							posted_at: new Date().toISOString(),
 							tags: [cleanRole],
@@ -395,7 +424,7 @@ function passesHardGate(job: RawJob): boolean {
 	return true;
 }
 
-// ─── Stage 1: Rapid Classification (llama-3.1-8b-instant) ────────────────────
+// ─── Stage 1: Rapid Classification (qwen/qwen3.8-27b) ────────────────────
 // Filters out roles paying below 12L or requiring excessive seniority
 async function stage1_classify(
 	jobs: RawJob[],
@@ -405,7 +434,7 @@ async function stage1_classify(
 	groq: Groq,
 ): Promise<{ qualifyingIds: string[]; droppedLocation: number; droppedSalary: number }> {
 	console.log(
-		`[Ghost] Stage 1: Classifying ${jobs.length} total jobs with llama-3.1-8b-instant using chunking...`,
+		`[Ghost] Stage 1: Classifying ${jobs.length} total jobs with qwen/qwen3.8-27b using chunking...`,
 	);
 
 	const CHUNK_SIZE = 15;
@@ -465,13 +494,19 @@ Return ONLY valid JSON in this exact format:
 
 		try {
 			const response = await groq.chat.completions.create({
-				model: "llama-3.1-8b-instant",
+				model: "qwen/qwen3.8-27b",
 				messages: [{ role: "user", content: prompt }],
-				response_format: { type: "json_object" },
 				temperature: 0.1,
+				max_tokens: 4096,
 			});
 
-			const text = response.choices[0]?.message?.content ?? "{}";
+			const rawText = response.choices[0]?.message?.content ?? "{}";
+			// Strip <think>...</think> block emitted by Qwen reasoning models
+			const afterThink = rawText.includes("</think>")
+				? rawText.slice(rawText.indexOf("</think>") + "</think>".length)
+				: rawText;
+			const jsonMatch = afterThink.match(/\{[\s\S]*\}/);
+			const text = jsonMatch ? jsonMatch[0] : "{}";
 			const parsed = JSON.parse(text) as {
 				qualifying_ids?: string[];
 				rejected_details?: { id: string; reason: string }[];
@@ -507,7 +542,7 @@ Return ONLY valid JSON in this exact format:
 	return { qualifyingIds, droppedLocation, droppedSalary };
 }
 
-// ─── Stage 2: Deep Distillation (llama-3.3-70b-versatile) ────────────────────
+// ─── Stage 2: Deep Distillation (qwen/qwen3.8-27b) ────────────────────
 // Generates the full Scout Report for a single job
 async function stage2_distill(
 	job: RawJob,
@@ -550,13 +585,19 @@ For hooks: Do not write generic hooks like 'I am impressed by your company.' Gen
 For tailored_bullets: Write exactly 3 short, punchy resume bullets. Maximum 15 words per bullet. Start each with a strong action verb. DO NOT write long, run-on sentences. Focus purely on technical execution and UI/UX impact. Do not just summarize the job. You must rewrite my existing project experience (building 'Kindly.ai', the 'StayReach' dashboard, and the 'Shift' task manager) to perfectly align with the keywords and requirements of this role.`;
 
 	const response = await groq.chat.completions.create({
-		model: "llama-3.3-70b-versatile",
+		model: "qwen/qwen3.8-27b",
 		messages: [{ role: "user", content: prompt }],
-		response_format: { type: "json_object" },
 		temperature: 0.3,
+		max_tokens: 4096,
 	});
 
-	const text = response.choices[0]?.message?.content ?? "{}";
+	const rawText = response.choices[0]?.message?.content ?? "{}";
+	// Strip <think>...</think> block emitted by Qwen reasoning models
+	const afterThink = rawText.includes("</think>")
+		? rawText.slice(rawText.indexOf("</think>") + "</think>".length)
+		: rawText;
+	const jsonMatch = afterThink.match(/\{[\s\S]*\}/);
+	const text = jsonMatch ? jsonMatch[0] : "{}";
 	const parsed = JSON.parse(text) as {
 		match_score?: number;
 		match_logic?: string;
@@ -851,7 +892,7 @@ export async function conductGlobalSweep(
 	// Cap at MAX_DAILY_DISTILLATIONS to respect free-tier limits
 	const toDistill = classified.slice(0, MAX_DAILY_DISTILLATIONS);
 	console.log(
-		`[Ghost] Stage 2: Distilling ${toDistill.length} jobs with llama-3.3-70b-versatile...`,
+		`[Ghost] Stage 2: Distilling ${toDistill.length} jobs with qwen/qwen3.8-27b...`,
 	);
 
 	let saved = 0;

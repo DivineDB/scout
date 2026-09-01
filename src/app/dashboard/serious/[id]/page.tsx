@@ -18,6 +18,7 @@ import {
 	Check,
 	Trash2,
 } from "lucide-react";
+import { parseAndFormatSalary, cleanJobDescription, getJobDescriptionBullets, cleanCompanyName, cleanJobRole } from "@/lib/format-job";
 import { formatSalary } from "@/lib/format-salary";
 import { supabase } from "@/lib/supabase";
 import meData from "@/data/me.json";
@@ -424,16 +425,16 @@ export default function SeriousModePage({
 					{/* ── Job header ───────────────────────────────────────────────── */}
 					<div>
 						<p
-							className="text-[10px] font-bold uppercase tracking-widest mb-1"
+							className="text-[10px] font-bold uppercase tracking-[0.2em] mb-1"
 							style={{ color: "var(--text-3)" }}
 						>
-							{job.company.name}
+							{cleanJobRole(job.role)}
 						</p>
 						<h1
 							className="text-xl font-black leading-tight mb-3"
 							style={{ color: "var(--text-1)" }}
 						>
-							{job.role}
+							{cleanCompanyName(job.company?.name || (job as any).company, job.role)}
 						</h1>
 						<div className="flex flex-wrap gap-2 text-[11px] font-semibold">
 							<span

@@ -13,6 +13,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
+import { cleanCompanyName, cleanJobRole, cleanJobDescription } from "@/lib/format-job";
 
 // ─── Score badge helpers ───────────────────────────────────────────────────────
 function getScoreStyle(score: number): {
@@ -234,14 +235,14 @@ export function JobCard({
 				{/* ── 1. Company Name & Title ────────────────────────────────────── */}
 				<div className="flex flex-col gap-1">
 					<p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-3)] group-hover:text-foreground/60 transition-colors">
-						{job.company.name}
+						{cleanJobRole(job.role)}
 					</p>
 					<div className="flex items-start justify-between gap-2">
 						<h3
 							className="text-lg font-bold tracking-tight text-[var(--text-1)] leading-snug line-clamp-2 text-ellipsis overflow-hidden flex-1"
 							style={{ minHeight: "3.5rem" }}
 						>
-							{job.role}
+							{cleanCompanyName(job.company?.name || (job as any).company, job.role)}
 						</h3>
 						<div onClick={(e) => e.stopPropagation()} className="shrink-0 pt-0.5">
 							<Popover>
@@ -351,7 +352,7 @@ export function JobCard({
 			<div className="flex flex-col gap-4 mt-2 relative z-10 shrink-0">
 				{/* ── 3. Description excerpt ── */}
 				<p className="line-clamp-2 text-xs leading-relaxed text-[var(--text-3)] group-hover:text-[var(--text-2)] font-medium transition-colors duration-150">
-					{job.description}
+					{cleanJobDescription(job.description)}
 				</p>
 
 				{/* ── Hover CTAs ── */}

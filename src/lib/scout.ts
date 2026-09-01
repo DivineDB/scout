@@ -66,7 +66,7 @@ export async function extractCompanyName(rawText: string): Promise<string> {
   if (!groq) return "Unknown Company";
   try {
     const response = await groq.chat.completions.create({
-      model: "llama-3.1-8b-instant",
+      model: "qwen/qwen3.6-27b",
       temperature: 0.1,
       messages: [
         {

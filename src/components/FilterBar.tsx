@@ -64,6 +64,7 @@ function RoleBadge({
 	return (
 		<button
 			onClick={onClick}
+			suppressHydrationWarning
 			className={`relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all duration-300 border ${
 				active
 					? "bg-mint-dim text-mint border-focus shadow-[0_0_15px_rgba(16,185,129,0.15)]"
@@ -87,6 +88,7 @@ function LocationButton({
 	return (
 		<button
 			onClick={onClick}
+			suppressHydrationWarning
 			className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all duration-300 first:rounded-l-md last:rounded-r-md border-r last:border-r-0 ${
 				active
 					? "bg-mint-dim text-mint border-focus"
@@ -313,7 +315,7 @@ export function FilterBar() {
 				/>
 
 				<Popover>
-					<PopoverTrigger className="flex items-center gap-1.5 rounded-md border border-white/5 bg-white/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white/40 transition-all hover:text-white/60 hover:border-white/10">
+					<PopoverTrigger suppressHydrationWarning className="flex items-center gap-1.5 rounded-md border border-white/5 bg-white/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white/40 transition-all hover:text-white/60 hover:border-white/10">
 						<Sliders className="h-3 w-3" />
 						Stack
 						<ChevronDown className="h-3 w-3" />
@@ -343,6 +345,7 @@ export function FilterBar() {
 									<button
 										key={skill}
 										onClick={() => toggleSkill(skill)}
+										suppressHydrationWarning
 										className={`rounded-md border px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight transition-all duration-200 ${
 											active
 												? "bg-mint-dim text-mint border-focus"

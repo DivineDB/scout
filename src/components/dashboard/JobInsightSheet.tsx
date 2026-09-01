@@ -14,8 +14,9 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Loader2, Shield, ChevronDown, Copy, Check, Trash2, RotateCw, Target } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { cleanCompanyName, cleanJobRole, cleanJobDescription, parseAndFormatSalary } from "@/lib/format-job";
 
-// ─── Design tokens ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Design tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const MINT = "var(--mint)";
 const MINT_DIM = "var(--mint-dim)";
 const SURFACE_2 = "var(--surface-2)";
@@ -26,7 +27,7 @@ const TEXT_1 = "var(--text-1)";
 const TEXT_2 = "var(--text-2)";
 const TEXT_3 = "var(--text-3)";
 
-// ─── Helper sub-components ─────────────────────────────────────────────────────
+// â”€â”€â”€ Helper sub-components â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function SectionLabel({ children }: { children: React.ReactNode }) {
 	return (
 		<p className="mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-foreground/30">
@@ -41,7 +42,7 @@ function CheckRow({ text }: { text: string }) {
 			className="flex items-start gap-2 text-sm"
 			style={{ color: "var(--text-2)" }}
 		>
-			<span className="mt-1.5 text-[6px] text-foreground/40 shrink-0">●</span>
+			<span className="mt-1.5 text-[6px] text-foreground/40 shrink-0">â—</span>
 			<span className="leading-relaxed font-medium">{text}</span>
 		</li>
 	);
@@ -53,20 +54,20 @@ function GapRow({ text }: { text: string }) {
 			className="flex items-start gap-2 text-[12px] opacity-60"
 			style={{ color: "var(--foreground)" }}
 		>
-			<span className="mt-1 text-[8px] text-foreground/40">○</span>
+			<span className="mt-1 text-[8px] text-foreground/40">â—‹</span>
 			<span className="leading-relaxed font-medium">{text}</span>
 		</li>
 	);
 }
 
-// ─── Channel tab config ────────────────────────────────────────────────────────
+// â”€â”€â”€ Channel tab config â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const CHANNELS: { label: string; value: OutreachChannel; icon: string }[] = [
-	{ label: "Email", value: "email", icon: "✉" },
+	{ label: "Email", value: "email", icon: "âœ‰" },
 	{ label: "LinkedIn", value: "linkedin", icon: "in" },
-	{ label: "Twitter", value: "twitter", icon: "𝕏" },
+	{ label: "Twitter", value: "twitter", icon: "ð•" },
 ];
 
-// ─── Main component ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Main component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export function JobInsightSheet({
 	job,
 	open,
@@ -78,12 +79,12 @@ export function JobInsightSheet({
 }) {
 	const router = useRouter();
 
-	// ── Promote / Remove / Redistill states
+	// â”€â”€ Promote / Remove / Redistill states
 	const [isPromoting, setIsPromoting] = useState(false);
 	const [isRedistilling, setIsRedistilling] = useState(false);
 	const [isRemoving, setIsRemoving] = useState(false);
 
-	// ── Multi-channel hook state
+	// â”€â”€ Multi-channel hook state
 	const [channel, setChannel] = useState<OutreachChannel>("email");
 	const [hooksByChannel, setHooksByChannel] = useState<
 		Partial<Record<OutreachChannel, string>>
@@ -93,16 +94,16 @@ export function JobInsightSheet({
 		null
 	);
 
-	// ── Shield / objection state
+	// â”€â”€ Shield / objection state
 	const [objectionStrategies, setObjectionStrategies] = useState<string[]>([]);
 	const [isLoadingObjections, setIsLoadingObjections] = useState(false);
 	const [isShieldOpen, setIsShieldOpen] = useState(false);
 
-	// ── Portfolio mapping state
+	// â”€â”€ Portfolio mapping state
 	const [portfolioMapping, setPortfolioMapping] = useState<any[]>([]);
 	const [isMappingPortfolio, setIsMappingPortfolio] = useState(false);
 
-	// ── Seed local state from cached DB values when sheet opens / job changes
+	// â”€â”€ Seed local state from cached DB values when sheet opens / job changes
 	useEffect(() => {
 		if (!job || !open) return;
 
@@ -142,12 +143,12 @@ export function JobInsightSheet({
 	const hasDistilledData = distilled !== null;
 
 	const isInsightSalaryUndisclosed = !job?.pay || (!job?.pay?.min && !job?.pay?.max) || (job?.pay?.min === 0 && job?.pay?.max === 0);
-	const insightSalaryLabel = isInsightSalaryUndisclosed ? "Undisclosed" : `₹${job?.pay?.min}–${job?.pay?.max}L`;
+	const insightSalaryLabel = isInsightSalaryUndisclosed ? "Undisclosed" : `â‚¹${job?.pay?.min}â€“${job?.pay?.max}L`;
 
 	// Current hook for the active channel (local state wins over cached)
 	const activeHook = hooksByChannel[channel];
 
-	// ─── API: map portfolio assets for target job ──────────────────────────────
+	// â”€â”€â”€ API: map portfolio assets for target job â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 	const mapPortfolio = useCallback(async () => {
 		if (isMappingPortfolio || !job) return;
 		setIsMappingPortfolio(true);
@@ -191,7 +192,7 @@ export function JobInsightSheet({
 				}
 			}
 
-			toast.success("Portfolio projects mapped! 🚀", { id: toastId });
+			toast.success("Portfolio projects mapped! ðŸš€", { id: toastId });
 		} catch (err: unknown) {
 			const msg = err instanceof Error ? err.message : String(err);
 			toast.error(`Mapping failed: ${msg}`, { id: toastId });
@@ -200,14 +201,14 @@ export function JobInsightSheet({
 		}
 	}, [job, isMappingPortfolio]);
 
-	// ─── API: generate hook for a channel ─────────────────────────────────────
+	// â”€â”€â”€ API: generate hook for a channel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 	const generateHook = useCallback(
 		async (targetChannel: OutreachChannel) => {
 			if (isGeneratingHook || !job) return;
 			setIsGeneratingHook(true);
 
 			const toastId = toast.loading(
-				`Generating ${targetChannel} hook…`
+				`Generating ${targetChannel} hookâ€¦`
 			);
 
 			try {
@@ -263,13 +264,13 @@ export function JobInsightSheet({
 		[job, isGeneratingHook, hooksByChannel]
 	);
 
-	// ─── API: analyze gaps + generate objection strategies ────────────────────
+	// â”€â”€â”€ API: analyze gaps + generate objection strategies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 	const generateShield = useCallback(async () => {
 		if (isLoadingObjections || !job) return;
 		setIsLoadingObjections(true);
 		setIsShieldOpen(true);
 
-		const toastId = toast.loading("Generating Shield strategies…");
+		const toastId = toast.loading("Generating Shield strategiesâ€¦");
 
 		try {
 			const res = await fetch("/api/job/analyze-gaps", {
@@ -319,7 +320,7 @@ export function JobInsightSheet({
 		}
 	}, [job, isLoadingObjections]);
 
-	// ─── Copy helper ──────────────────────────────────────────────────────────
+	// â”€â”€â”€ Copy helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 	const copyHook = async (ch: OutreachChannel) => {
 		const text = hooksByChannel[ch];
 		if (!text) return;
@@ -329,7 +330,7 @@ export function JobInsightSheet({
 		setTimeout(() => setCopiedChannel(null), 2000);
 	};
 
-	// ─── Existing action handlers ─────────────────────────────────────────────
+	// â”€â”€â”€ Existing action handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 	const handleApply = () => {
 		if (!job) return;
 		const quickIntro =
@@ -345,7 +346,7 @@ export function JobInsightSheet({
 	const handleRedistill = async () => {
 		if (!job) return;
 		setIsRedistilling(true);
-		const toastId = toast.loading("Re-distilling with AI…");
+		const toastId = toast.loading("Re-distilling with AIâ€¦");
 		try {
 			const res = await fetch("/api/scout/distill", {
 				method: "POST",
@@ -354,7 +355,7 @@ export function JobInsightSheet({
 			});
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.error || "Distillation failed");
-			toast.success("Job distilled! Refreshing…", { id: toastId });
+			toast.success("Job distilled! Refreshingâ€¦", { id: toastId });
 			router.refresh();
 			onClose();
 		} catch (err: unknown) {
@@ -393,7 +394,7 @@ export function JobInsightSheet({
 				return;
 			}
 
-			toast.success("Added to your Serious Queue! 🚀", { id: toastId });
+			toast.success("Added to your Serious Queue! ðŸš€", { id: toastId });
 			onClose();
 			router.push("/dashboard/serious");
 		} catch (err: unknown) {
@@ -435,7 +436,7 @@ export function JobInsightSheet({
 		}
 	};
 
-	// ─── Render ───────────────────────────────────────────────────────────────
+	// â”€â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 	if (!job) return null;
 
 	return (
@@ -447,7 +448,7 @@ export function JobInsightSheet({
 					borderLeft: `1px solid ${BORDER_DEFAULT}`,
 				}}
 			>
-				{/* ── Header ─────────────────────────────────────────────── */}
+				{/* â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 				<SheetHeader
 					className="border-b px-6 py-6 shrink-0 text-left"
 					style={{
@@ -457,10 +458,10 @@ export function JobInsightSheet({
 				>
 					<div>
 						<SheetDescription className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-3)]">
-							{job.company.name}
+							{cleanJobRole(job.role)}
 						</SheetDescription>
 						<SheetTitle className="text-xl font-bold tracking-tight mt-1 text-[var(--text-1)]">
-							{job.role}
+							{cleanCompanyName(job.company?.name || (job as any).company)}
 						</SheetTitle>
 						<div className="mt-2 flex items-center gap-3 text-xs font-semibold text-[var(--text-2)]">
 							<span>{job.remote_status}</span>
@@ -474,10 +475,10 @@ export function JobInsightSheet({
 					</div>
 				</SheetHeader>
 
-				{/* ── Scrollable Body ─────────────────────────────────────── */}
+				{/* â”€â”€ Scrollable Body â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 				<div className="flex-1 overflow-y-auto px-6 py-6 space-y-8">
 
-					{/* ── Pending distillation banner ──────────────────────── */}
+					{/* â”€â”€ Pending distillation banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 					{isPending && (
 						<div
 							className="rounded-lg p-4 flex flex-col gap-3"
@@ -487,7 +488,7 @@ export function JobInsightSheet({
 							}}
 						>
 							<div className="flex items-center gap-2">
-								<span style={{ color: "#FBBF24" }}>⏳</span>
+								<span style={{ color: "#FBBF24" }}>â³</span>
 								<p
 									className="text-[11px] font-bold uppercase tracking-widest"
 									style={{ color: "#FBBF24" }}
@@ -513,15 +514,15 @@ export function JobInsightSheet({
 								}}
 							>
 								{isRedistilling ? (
-									<><Loader2 size={12} className="animate-spin" /> Distilling…</>
+									<><Loader2 size={12} className="animate-spin" /> Distillingâ€¦</>
 								) : (
-									"✨ Re-distill with AI"
+									"âœ¨ Re-distill with AI"
 								)}
 							</button>
 						</div>
 					)}
 
-					{/* ── 1. Job Description (always visible) ───────────────── */}
+					{/* â”€â”€ 1. Job Description (always visible) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 					<section>
 						<SectionLabel>About the Role</SectionLabel>
 						<p
@@ -532,7 +533,7 @@ export function JobInsightSheet({
 						</p>
 					</section>
 
-					{/* ── 2. Gaps and Skills Needed (Reality Check) ─────────── */}
+					{/* â”€â”€ 2. Gaps and Skills Needed (Reality Check) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 					{hasDistilledData && (
 						<section className="space-y-4">
 							<SectionLabel>The Reality Check</SectionLabel>
@@ -546,14 +547,14 @@ export function JobInsightSheet({
 										<ul className="space-y-2">
 											{distilled.gaps.map((gap, i) => (
 												<li key={i} className="flex items-center gap-2 text-sm text-[var(--text-2)] font-medium">
-													<span className="text-red-400 font-bold shrink-0">✕</span>
+													<span className="text-red-400 font-bold shrink-0">âœ•</span>
 													<span>{gap}</span>
 												</li>
 											))}
 										</ul>
 									) : (
 										<p className="text-sm font-semibold text-mint flex items-center gap-1.5">
-											<span className="text-mint font-bold shrink-0">✓</span>
+											<span className="text-mint font-bold shrink-0">âœ“</span>
 											No gaps detected. Alignment is strong.
 										</p>
 									)}
@@ -589,7 +590,7 @@ export function JobInsightSheet({
 												disabled={isLoadingObjections}
 												className="w-full flex items-center justify-center gap-2 rounded-md py-1.5 text-[10px] font-bold transition-all hover:opacity-80 border border-mint/20 text-mint bg-mint-dim"
 											>
-												✦ Generate Objection Handler
+												âœ¦ Generate Objection Handler
 											</button>
 										) : isLoadingObjections ? (
 											<div className="flex items-center gap-2 py-2">
@@ -598,7 +599,7 @@ export function JobInsightSheet({
 													className="animate-spin text-mint"
 												/>
 												<span className="text-[var(--text-3)] text-[11px] font-medium">
-													Generating counter-arguments…
+													Generating counter-argumentsâ€¦
 												</span>
 											</div>
 										) : (
@@ -618,7 +619,7 @@ export function JobInsightSheet({
 													disabled={isLoadingObjections}
 													className="mt-2 w-full flex items-center justify-center gap-2 rounded-md py-1.5 text-[10px] font-bold transition-all hover:opacity-80 disabled:opacity-40 border border-[var(--border-subtle)] text-[var(--text-3)] bg-white/5"
 												>
-													↻ Regenerate Shield
+													â†» Regenerate Shield
 												</button>
 											</>
 										)}
@@ -628,7 +629,7 @@ export function JobInsightSheet({
 						</section>
 					)}
 
-					{/* ── 3. Outreach Hook Generator ────────────────────────── */}
+					{/* â”€â”€ 3. Outreach Hook Generator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
 					<section>
 						<SectionLabel>Outreach Hook</SectionLabel>
 
@@ -717,9 +718,9 @@ export function JobInsightSheet({
 												}}
 											>
 												{isGeneratingHook ? (
-													<><Loader2 size={9} className="animate-spin" /> Generating…</>
+													<><Loader2 size={9} className="animate-spin" /> Generatingâ€¦</>
 												) : (
-													"↻ Regenerate"
+													"â†» Regenerate"
 												)}
 											</button>
 										</div>
@@ -743,9 +744,9 @@ export function JobInsightSheet({
 											}}
 										>
 											{isGeneratingHook ? (
-												<><Loader2 size={11} className="animate-spin" /> Generating…</>
+												<><Loader2 size={11} className="animate-spin" /> Generatingâ€¦</>
 											) : (
-												<>✦ Generate {CHANNELS.find((c) => c.value === channel)?.label} Hook</>
+												<>âœ¦ Generate {CHANNELS.find((c) => c.value === channel)?.label} Hook</>
 											)}
 										</button>
 									</div>
@@ -754,7 +755,7 @@ export function JobInsightSheet({
 						</div>
 					</section>
 
-					{/* ── Resume Additions ── */}
+					{/* â”€â”€ Resume Additions â”€â”€ */}
 					{hasDistilledData &&
 						distilled.tailored_bullets &&
 						distilled.tailored_bullets.length > 0 && (
@@ -768,115 +769,63 @@ export function JobInsightSheet({
 							</section>
 						)}
 
-					{/* ── Requirements & fallback (if no distilled data) ── */}
-					{!hasDistilledData && !isPending && (
-						<>
-							<section>
-								<SectionLabel>AI-Distilled Insight</SectionLabel>
-								<div
-									className="rounded-lg p-5 text-[12px] leading-relaxed font-semibold"
-									style={{
-										background: "rgba(255,255,255,0.02)",
-										border: `1px solid ${BORDER_DEFAULT}`,
-										color: "var(--foreground)",
-									}}
-								>
-									<div className="flex items-center gap-1.5 mb-2">
-										<span className="flex h-3 w-fit px-1 items-center justify-center rounded-sm bg-foreground text-[7px] font-black text-background uppercase">
-											Scout
-										</span>
-										<span className="text-[10px] font-black uppercase tracking-widest text-foreground">
-											Scout
-										</span>
-									</div>
-									<ul
-										className="list-disc pl-4 space-y-1 mt-2 font-medium"
-										style={{ color: TEXT_2 }}
-									>
-										<li>
-											Strong alignment: {job.tech_stack.slice(0, 2).join(", ")}
-										</li>
-										<li>
-											Salary matches your target range: ₹{job.pay.min}-
-											{job.pay.max}L
-										</li>
-										<li>
-											{job.match_score >= 80
-												? "Highly recommended to apply immediately."
-												: "Moderate match on required experience level."}
-										</li>
-									</ul>
-								</div>
-							</section>
 
-							{job.requirements && job.requirements.length > 0 && (
-								<section>
-									<SectionLabel>Requirements</SectionLabel>
-									<ul className="space-y-1.5">
-										{job.requirements.map((r, i) => (
-											<CheckRow key={i} text={r} />
-										))}
-									</ul>
-								</section>
-							)}
-						</>
-					)}
 				</div>
 
 				{/* ── Floating Action Bar ─────────────────────────────────── */}
-					<div
-						className="sticky bottom-0 w-full z-50 bg-[var(--surface-1)]/90 backdrop-blur-md border-t border-[var(--border-subtle)] p-4 sm:p-6 flex justify-between items-center shrink-0"
-					>
-						{/* Left Side (Destructive/Secondary Actions) */}
-						<div className="flex items-center gap-1.5">
-							<button
-								disabled={isRemoving}
-								onClick={removeJob}
-								title="Remove Job"
-								className="text-[var(--text-3)] hover:text-red-400 hover:bg-[var(--surface-3)] p-2 rounded-md transition-all disabled:opacity-40 cursor-pointer"
-							>
-								{isRemoving ? (
-									<Loader2 size={16} className="animate-spin" />
-								) : (
-									<Trash2 size={16} strokeWidth={1.5} />
-								)}
-							</button>
-							<button
-								disabled={isRedistilling}
-								onClick={handleRedistill}
-								title="Refresh AI Analysis"
-								className="text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-3)] p-2 rounded-md transition-all disabled:opacity-40 cursor-pointer"
-							>
-								{isRedistilling ? (
-									<Loader2 size={16} className="animate-spin" />
-								) : (
-									<RotateCw size={16} strokeWidth={1.5} />
-								)}
-							</button>
-						</div>
-
-						{/* Right Side (Primary & Secondary CTAs) */}
-						<div className="flex items-center gap-2.5">
-							<button
-								onClick={handleApply}
-								className="border border-[var(--border-subtle)] text-[var(--text-1)] px-4 py-2 rounded-md hover:border-[var(--border-strong)] bg-[var(--surface-2)] transition-all text-xs font-semibold whitespace-nowrap cursor-pointer"
-							>
-								Copy Intro &amp; Apply
-							</button>
-							<button
-								disabled={isPromoting}
-								onClick={promoteJobToSerious}
-								className="flex items-center gap-1.5 bg-mint text-[#050505] font-semibold px-5 py-2 rounded-md hover:bg-mint-strong transition-all duration-150 transform hover:-translate-y-[1px] shadow-[0_0_15px_var(--mint-dim)] disabled:opacity-40 text-xs font-semibold whitespace-nowrap cursor-pointer"
-							>
-								{isPromoting ? (
-									<Loader2 size={14} className="animate-spin text-[#050505]" />
-								) : (
-									<Target size={14} strokeWidth={1.5} />
-								)}
-								<span>{isPromoting ? "Promoting…" : "Promote to Serious"}</span>
-							</button>
-						</div>
+				<div
+					className="sticky bottom-0 w-full z-50 bg-[var(--surface-1)]/90 backdrop-blur-md border-t border-[var(--border-subtle)] px-3 py-3 flex items-center justify-between shrink-0 gap-2"
+				>
+					{/* Left Side — icon buttons */}
+					<div className="flex items-center gap-1 shrink-0">
+						<button
+							disabled={isRemoving}
+							onClick={removeJob}
+							title="Remove Job"
+							className="text-[var(--text-3)] hover:text-red-400 hover:bg-[var(--surface-3)] p-1.5 rounded-md transition-all disabled:opacity-40 cursor-pointer"
+						>
+							{isRemoving ? (
+								<Loader2 size={15} className="animate-spin" />
+							) : (
+								<Trash2 size={15} strokeWidth={1.5} />
+							)}
+						</button>
+						<button
+							disabled={isRedistilling}
+							onClick={handleRedistill}
+							title="Refresh AI Analysis"
+							className="text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-3)] p-1.5 rounded-md transition-all disabled:opacity-40 cursor-pointer"
+						>
+							{isRedistilling ? (
+								<Loader2 size={15} className="animate-spin" />
+							) : (
+								<RotateCw size={15} strokeWidth={1.5} />
+							)}
+						</button>
 					</div>
+
+					{/* Right Side — fixed-width CTAs so they never clip */}
+					<div className="flex items-center gap-2 shrink-0">
+						<button
+							onClick={handleApply}
+							className="border border-[var(--border-subtle)] text-[var(--text-1)] w-[120px] py-1.5 rounded-md hover:border-[var(--border-strong)] bg-[var(--surface-2)] transition-all text-[10px] font-semibold whitespace-nowrap cursor-pointer text-center"
+						>
+							Intro &amp; Apply
+						</button>
+						<button
+							disabled={isPromoting}
+							onClick={promoteJobToSerious}
+							className="flex items-center justify-center gap-1 bg-mint text-[#050505] font-bold w-[130px] py-1.5 rounded-md hover:bg-mint-strong transition-all duration-150 shadow-[0_0_15px_var(--mint-dim)] disabled:opacity-40 text-[10px] whitespace-nowrap cursor-pointer"
+						>
+							{isPromoting ? (
+								<Loader2 size={12} className="animate-spin text-[#050505]" />
+							) : (
+								<Target size={12} strokeWidth={1.5} />
+							)}
+							<span>{isPromoting ? "Promoting..." : "Promote"}</span>
+						</button>
+					</div>
+				</div>
 			</SheetContent>
 		</Sheet>
 	);
